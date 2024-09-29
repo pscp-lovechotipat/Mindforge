@@ -1,0 +1,9 @@
+langchain
+langgraph
+langchain_community
+neo4j
+pypdf
+markdown
+python-dotenv
+tiktoken
+unstructured
