@@ -16,29 +16,12 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { ChevronLeft, LoaderCircle } from "lucide-react";
-import login from "@/actions/auth/login";
 import Link from "next/link";
 import register from "@/actions/auth/register";
 import toast from "react-hot-toast";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-
-export const registerSchema = z
-    .object({
-        firstName: z.string().max(255),
-        lastName: z.string().max(255),
-        email: z.string().email().max(255),
-        password: z
-            .string()
-            .min(8, "The password must be at least 8 characters long"),
-        confirmPassword: z
-            .string()
-            .min(8, "The password must be at least 8 characters long"),
-    })
-    .refine((d) => d.password === d.confirmPassword, {
-        message: "Passwords don't match",
-        path: ["confirmPassword"],
-    });
+import registerSchema from "@/schemas/registerSchama";
 
 export default function RegisterPage() {
     const [isLoading, setLoading] = useState(false);

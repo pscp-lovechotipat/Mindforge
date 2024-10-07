@@ -1,9 +1,9 @@
 "use server";
 
-import { registerSchema } from "@/app/register/page";
 import prisma from "@/lib/prisma";
 import { z } from "zod";
 import bcrypt from "bcrypt";
+import registerSchema from "@/schemas/registerSchama";
 
 export default async function register({
     firstName,
