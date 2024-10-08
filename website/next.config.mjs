@@ -4,6 +4,7 @@ const nextConfig = {
     // Enable Cloudflare's next-on-pages
     experimental: {
         enableUndici: true,
+        serverActions: true
     },
     // Add Cloudflare-specific headers
     headers() {
