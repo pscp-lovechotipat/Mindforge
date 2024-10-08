@@ -1,0 +1,4 @@
+name = "mindforge"
+compatibility_date = "2024-10-08"  # Use a recent date
+compatibility_flags = ["nodejs_compat"]
+pages_build_output_dir = ".vercel/output/static"
