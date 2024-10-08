@@ -1,16 +1,6 @@
-import getUser from "@/actions/auth/getUser";
-import Link from "next/link";
-import LogoutButton from "./LogoutButton";
-import { redirect } from "next/navigation";
 import StartPage from "./StartPage";
 
-export default async function HomePage() {
-    const user = await getUser();
-
-    if (!user) {
-        redirect("/login");
-    }
-
+export default function HomePage() {
     return <StartPage />
 
     // return (
