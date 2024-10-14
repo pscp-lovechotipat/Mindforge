@@ -10,13 +10,24 @@ jobs:
 
     steps:
     - uses: actions/checkout@v3
+    - name: Debug SSH connection
+      env:
+        SERVER_IP: ${{ secrets.SERVER_IP }}
+        SERVER_USER: ${{ secrets.SERVER_USER }}
+        SERVER_PASSWORD: ${{ secrets.SERVER_PASSWORD }}
+      run: |
+        echo "Checking SSH version:"
+        ssh -V
+        echo "Attempting to connect to $SERVER_USER@$SERVER_IP"
+        sshpass -p "$SERVER_PASSWORD" ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -v $SERVER_USER@$SERVER_IP "echo Connection successful"
+
     - name: Deploy to local server
       env:
         SERVER_IP: ${{ secrets.SERVER_IP }}
         SERVER_USER: ${{ secrets.SERVER_USER }}
-        SSH_PASSWORD: ${{ secrets.SERVER_PASSWORD }}
+        SERVER_PASSWORD: ${{ secrets.SERVER_PASSWORD }}
       run: |
-        ssh $SERVER_USER:$SERVER_PASSWORD@$SERVER_IP << 'EOF'
+        sshpass -p "$SERVER_PASSWORD" ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null $SERVER_USER@$SERVER_IP << 'EOF'
           cd /home/ubuntu/Mindforge
           git pull origin main
           cd /home/ubuntu/Mindforge/website
