@@ -10,39 +10,13 @@ jobs:
 
     steps:
     - uses: actions/checkout@v3
-    - name: Setup and debug SSH key
-      env:
-        SSH_PRIVATE_KEY: ${{ secrets.SERVER_SSH_KEY }}
-      run: |
-        mkdir -p ~/.ssh
-        echo "$SSH_PRIVATE_KEY" > ~/.ssh/id_rsa
-        chmod 600 ~/.ssh/id_rsa
-        echo "Content of id_rsa (first 5 lines, sensitive info redacted):"
-        sed 's/./*/g' ~/.ssh/id_rsa | head -n 5
-        echo "File type of id_rsa:"
-        file ~/.ssh/id_rsa
-        echo "Private key details (if OpenSSH format):"
-        ssh-keygen -l -f ~/.ssh/id_rsa || echo "Failed to read private key as OpenSSH format"
-        echo "Attempting to convert key (if needed):"
-        ssh-keygen -p -N "" -m PEM -f ~/.ssh/id_rsa || echo "Key conversion not needed or failed"
-
-    - name: Debug SSH connection
-      env:
-        SERVER_IP: ${{ secrets.SERVER_IP }}
-        SERVER_USER: ${{ secrets.SERVER_USER }}
-      run: |
-        echo "SSH key file permissions:"
-        ls -l ~/.ssh/id_rsa
-        echo "Attempting to connect to $SERVER_USER@$SERVER_IP"
-        ssh -v -o StrictHostKeyChecking=no $SERVER_USER@$SERVER_IP exit
-
     - name: Deploy to local server
-      if: success()
       env:
         SERVER_IP: ${{ secrets.SERVER_IP }}
         SERVER_USER: ${{ secrets.SERVER_USER }}
+        SSH_PASSWORD: ${{ secrets.SSH_PASSWORD }}
       run: |
-        ssh -o StrictHostKeyChecking=no $SERVER_USER@$SERVER_IP << 'EOF'
+        sshpass -p "$SSH_PASSWORD" ssh -o StrictHostKeyChecking=no $SERVER_USER@$SERVER_IP << 'EOF'
           cd /home/ubuntu/Mindforge
           git pull origin main
           cd /home/ubuntu/Mindforge/website
