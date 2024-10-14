@@ -1,0 +1,48 @@
+name: Node.js CI/CD
+
+on:
+  push:
+    branches: [ main ]  # Trigger the workflow on push events to the main branch
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v3
+    - name: Use Node.js
+      uses: actions/setup-node@v3
+      with:
+        node-version: '16.x'  # Specify the Node.js version
+    - run: npm ci  # Install dependencies
+    - run: npm run build --if-present  # Build your project
+    - run: npm test  # Run tests
+
+    - name: Deploy to local server
+      env:
+        SSH_PRIVATE_KEY: ${{ secrets.SERVER_SSH_KEY }}
+        SERVER_IP: ${{ secrets.SERVER_IP }}
+        SERVER_USER: ${{ secrets.SERVER_USER }}
+      run: |
+        # Install SSH client
+        sudo apt-get install -y openssh-client
+
+        # Set up SSH key
+        mkdir -p ~/.ssh
+        echo "$SSH_PRIVATE_KEY" > ~/.ssh/id_rsa
+        chmod 600 ~/.ssh/id_rsa
+
+        # Add server to known hosts
+        ssh-keyscan -H $SERVER_IP >> ~/.ssh/known_hosts
+
+        # Deploy to server
+        ssh $SERVER_USER@$SERVER_IP << 'EOF'
+          cd /home/ubuntu/Mindforge
+          git pull origin main
+          cd /home/ubuntu/Mindforge/website
+          bun run build
+          pm2 restart mindforge-web  # Or your preferred method to restart the Node.js app
+          # Add any other necessary commands here
+          # For example, you might want to call your custom API:
+          # curl -X POST http://your-custom-api-endpoint/deploy
+EOF
