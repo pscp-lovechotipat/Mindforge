@@ -1,18 +1,12 @@
-import { Input } from "@/components/ui/input";
-import {
-    FolderClosed,
-    House,
-    LogOut,
-    Plus,
-    Settings,
-    User,
-} from "lucide-react";
+import { FolderClosed, House, Plus, Settings, User } from "lucide-react";
+import LogoutButton from "./LogoutButton";
 
-export default function StartPage() {
+export default function SideBar() {
     return (
-        <div className="flex min-h-screen">
-            <div className="min-w-[180px] px-4 pt-8 pb-12 flex flex-col items-center">
-                {/* <h1 className="text-4xl mb-8">MF</h1> */}
+        <div className="min-w-[180px] px-4 pt-8 pb-12 flex flex-col items-center justify-between">
+            {/* <h1 className="text-4xl mb-8">MF</h1> */}
+
+            <div className="w-full flex flex-col items-center">
                 <img
                     className="w-[100px] mb-8"
                     src="https://cdn.aona.co.th/1i90n98tq/MF-Logo.svg"
@@ -44,26 +38,9 @@ export default function StartPage() {
                     >
                         <User size={40} />
                     </button>
-                    <button
-                        type="button"
-                        className="w-[65px] aspect-[1/1] flex justify-center items-center rounded-full"
-                    >
-                        <Settings size={40} />
-                    </button>
-                </div>
-                <div className="h-full"></div>
-                <button
-                    type="button"
-                    className="w-[65px] aspect-[1/1] flex justify-center items-center rounded-full"
-                >
-                    <LogOut size={40} />
-                </button>
-            </div>
-            <div className="w-full pt-6">
-                <div className="flex justify-between">
-                    <Input className="bg-myslate-800 border-none rounded-full text-xl p-6" />
                 </div>
             </div>
+            <LogoutButton />
         </div>
     );
 }

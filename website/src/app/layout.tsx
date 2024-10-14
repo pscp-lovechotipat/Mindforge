@@ -1,7 +1,9 @@
 import { Metadata } from "next";
 import { Toaster } from "react-hot-toast";
 import "./globals.css";
-import LoginPage from "./login/page";
+import LoginPage from "./(auth)/login/page";
+import SideBar from "@/components/Navigation/Sidebar";
+import { Input } from "@/components/ui/input";
 
 export const metadata: Metadata = {
     title: "Create Next App",
@@ -27,7 +29,9 @@ export default function RootLayout({
                     rel="stylesheet"
                 />
             </head>
-            <body className={`min-h-screen antialiased bg-myslate-950 text-white`}>
+            <body
+                className={`min-h-screen antialiased bg-myslate-950 text-white`}
+            >
                 <Toaster position="bottom-right" />
                 {children}
             </body>
