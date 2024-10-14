@@ -10,35 +10,6 @@ jobs:
 
     steps:
     - uses: actions/checkout@v3
-
- new content.
-For the SERVER_SSH_KEY secret in your GitHub repository settings:
-Copy your entire private key, including the "-----BEG
-Claude can make mistakes. Please double-check responses.
-
-
-
-No file chosen
-
-
-
-3.5 Sonnet
-
-GitHub Actions workflow for Node.js auto-deploy
-
-name: Bun CI/CD
-
-on:
-  push:
-    branches: [ main ]
-
-jobs:
-  build-and-deploy:
-    runs-on: ubuntu-latest
-
-    steps:
-    - uses: actions/checkout@v3
-
     - name: Setup and debug SSH key
       env:
         SSH_PRIVATE_KEY: ${{ secrets.SERVER_SSH_KEY }}
@@ -72,11 +43,11 @@ jobs:
         SERVER_USER: ${{ secrets.SERVER_USER }}
       run: |
         ssh -o StrictHostKeyChecking=no $SERVER_USER@$SERVER_IP << 'EOF'
-        cd /home/ubuntu/Mindforge
-        git pull origin main
-        cd /home/ubuntu/Mindforge/website
-        bun run build
-        pm2 restart mindforge-web  # Or your preferred method to restart the Node.js app
-        # Add any other necessary commands here
-        # For example, you might want to call your custom API:
-        # curl -X POST http://your-custom-api-endpoint/deploy
+          cd /home/ubuntu/Mindforge
+          git pull origin main
+          cd /home/ubuntu/Mindforge/website
+          bun run build
+          pm2 restart mindforge-web  # Or your preferred method to restart the Node.js app
+          # Add any other necessary commands here
+          # For example, you might want to call your custom API:
+          # curl -X POST http://your-custom-api-endpoint/deploy
