@@ -32,7 +32,8 @@ jobs:
           git pull origin main
           cd /home/ubuntu/Mindforge/website
           /home/ubuntu/.nvm/versions/node/v20.15.1/bin/bun run build
-          /home/ubuntu/.nvm/versions/node/v20.15.1/bin/pm2 restart mindforge-web  # Or your preferred method to restart the Node.js app
+          /home/ubuntu/.nvm/versions/node/v20.15.1/bin/pm2 delete mindforge-web
+          /home/ubuntu/.nvm/versions/node/v20.15.1/bin/pm2 start "/home/ubuntu/.nvm/versions/node/v20.15.1/bin/bun start --port 3002" --name mindforge-web
           # Add any other necessary commands here
           # For example, you might want to call your custom API:
           # curl -X POST http://your-custom-api-endpoint/deploy
