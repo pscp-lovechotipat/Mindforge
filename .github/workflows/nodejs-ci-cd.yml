@@ -45,4 +45,3 @@ jobs:
           # Add any other necessary commands here
           # For example, you might want to call your custom API:
           # curl -X POST http://your-custom-api-endpoint/deploy
-EOF
