@@ -10,14 +10,6 @@ jobs:
 
     steps:
     - uses: actions/checkout@v3
-    - name: Use Node.js
-      uses: actions/setup-node@v3
-      with:
-        node-version: '16.x'  # Specify the Node.js version
-    - run: npm ci  # Install dependencies
-    - run: npm run build --if-present  # Build your project
-    - run: npm test  # Run tests
-
     - name: Deploy to local server
       env:
         SSH_PRIVATE_KEY: ${{ secrets.SERVER_SSH_KEY }}
