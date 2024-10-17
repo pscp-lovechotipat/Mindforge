@@ -1,18 +1,40 @@
-import logging
-from typing import Dict, Any
+from typing import List, Dict, Any
+from langchain.prompts import PromptTemplate
+import json
 
-logger = logging.getLogger(__name__)
+def summarize_documents(documents: List[Any], llm: Any, embeddings: Any) -> Dict[str, List[str]]:
+    document_summarizer_prompt = PromptTemplate(
+        input_variables=["document_content"],
+        template="""
+        <system>
+        You are a helpful assistant specializing in data extraction from documents.
+        </system>
 
-# Define your LLM
-llm = ChatGroq(model="llama-3.1-70b-versatile", temperature=0.3)
+        <user>
+        Your task is to extract all roles mentioned in the given documents and their associated tasks.
+        Provide your answer as a JSON string where keys are roles and values are lists of tasks.
+        Only return the JSON string without any additional explanation or formatting.
 
-def summarize_document(document: Any) -> Dict[str, Any]:
-    """Summarize_document"""
-def summarize_role(role: str, details: Dict) -> Dict[str, Any]:
-    """Summarize_Role"""
+        Example format:
+        {{"Role1": ["Task1", "Task2", "Task3"], "Role2": ["Task1", "Task2"]}}
 
-def process_summary(summary: str) -> Dict[str, Any]:
-    """process each chunking"""
+        Ensure your output is a valid JSON string that can be parsed directly.
 
-def process_role_summary(summary: str) -> Dict[str, Any]:
-    """process each role"""
+        If you can provide me the right and complete answers, you will get $100 tips,
+        but if you do it wrong, you have to send me $50.
+        </user>
+
+        <query>
+        Extract all roles and their associated tasks from the following document:
+        {document_content}
+        </query>
+        """
+    )
+
+    roles_tasks_summary = {}
+    for document in documents:
+        prompt = document_summarizer_prompt.format(document_content=document)
+        llm_response = llm.run(prompt)
+        parsed_response = json.loads(llm_response)
+        roles_tasks_summary.update(parsed_response)
+    return roles_tasks_summary
