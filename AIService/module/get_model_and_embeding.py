@@ -8,7 +8,7 @@ def get_llm(model_name:str = "llama-3.1-70b-versatile" , temp:float = 0.3):
     return ChatGroq(model=f"{model_name}", temperature=temp)
 
 def get_embedding(_model_name:str = "BAAI/bge-base-en-v1.5"):
-    
+
     """Get Embeddings"""
     model_name = f"{_model_name}"
     model_kwargs = {'device': 'cpu'}

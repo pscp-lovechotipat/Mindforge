@@ -37,4 +37,5 @@ def summarize_documents(documents: List[Any], llm: Any, embeddings: Any) -> Dict
         llm_response = llm.run(prompt)
         parsed_response = json.loads(llm_response)
         roles_tasks_summary.update(parsed_response)
+
     return roles_tasks_summary
