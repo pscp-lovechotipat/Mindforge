@@ -4,6 +4,7 @@ import prisma from "@/lib/prisma";
 import { z } from "zod";
 import bcrypt from "bcrypt";
 import registerSchema from "@/schemas/registerSchama";
+import generateAiServiceId from "@/utils/generateAiServiceId";
 
 export default async function register({
     firstName,
@@ -22,8 +23,10 @@ export default async function register({
             message: "Duplicate email, Please try another email.",
         };
     }
+    const aiServiceId = generateAiServiceId();
     await prisma.user.create({
         data: {
+            aiServiceId,
             firstName,
             lastName,
             email,
