@@ -38,7 +38,7 @@ A comprehensive system for managing teams, tasks, and document analysis using Fa
 ## 📋 Prerequisites
 
 ```bash
-# Python 3.11+
+# Python 3.8+
 python --version
 
 # Neo4j Database
