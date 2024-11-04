@@ -35,16 +35,10 @@ A comprehensive system for managing teams, tasks, and document analysis using Fa
 - GROQ/OpenAI for LLM integration
 - Python 3.8+
 
-### Frontend
-- HTML5/JavaScript
-- Tailwind CSS
-- vis.js for graph visualization
-- Vanilla JavaScript (No framework dependencies)
-
 ## 📋 Prerequisites
 
 ```bash
-# Python 3.8+
+# Python 3.11+
 python --version
 
 # Neo4j Database
@@ -200,7 +194,7 @@ python -m unittest tests/test_api.py
 ## 📚 Project Structure
 
 ```
-project_root/
+AIService/
 ├── .env                     # Environment variables
 ├── main.py                 # FastAPI application
 ├── config.py              # Configuration settings
@@ -224,26 +218,3 @@ project_root/
 - Secure API endpoints
 - Use environment variables for sensitive data
 - Implement proper authentication in production
-
-## 🤝 Contributing
-
-1. Fork the repository
-2. Create a feature branch
-3. Commit changes
-4. Push to the branch
-5. Open a pull request
-
-## 📝 License
-
-This project is licensed under the MIT License - see the LICENSE file for details.
-
-## 👥 Authors
-
-- Your Name - Initial work - [YourGithub](https://github.com/yourusername)
-
-## 🙏 Acknowledgments
-
-- vis.js for graph visualization
-- Tailwind CSS for styling
-- FastAPI community
-- Neo4j community
