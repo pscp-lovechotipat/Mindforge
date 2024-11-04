@@ -19,7 +19,7 @@ export default function LogoutButton() {
     return (
         <button
             type="button"
-            className="w-[65px] aspect-[1/1] flex justify-center items-center rounded-full hover:scale-95 active:scale-90"
+            className="w-[65px] aspect-[1/1] flex justify-center items-center rounded-full transition hover:scale-[0.975] active:scale-95 hover:bg-white/10"
             onClick={handleLogoutClick}
         >
             <LogOut size={40} />

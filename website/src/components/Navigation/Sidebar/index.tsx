@@ -1,7 +1,8 @@
-import { FolderClosed, House, User } from "lucide-react";
+import { FolderClosed, House, Settings, User } from "lucide-react";
 import LogoutButton from "./LogoutButton";
-import CreateProjectDialog from "@/components/Dialogs/CreateProject";
 import Link from "next/link";
+import { CreateProjectButton } from "@/components/Dialogs/CreateProject";
+import ActiveLink from "./ActiveLink";
 
 export default function SideBar() {
     return (
@@ -16,27 +17,18 @@ export default function SideBar() {
                         alt="MF-Logo"
                     />
                 </Link>
-                <CreateProjectDialog />
+                <CreateProjectButton className="px-3 mb-6" />
                 <p className="text-xl font-bold mb-6">Menu</p>
                 <div className="space-y-6">
-                    <button
-                        type="button"
-                        className="w-[65px] aspect-[1/1] bg-white text-myslate-950 flex justify-center items-center rounded-full"
-                    >
+                    <ActiveLink href="/">
                         <House size={40} />
-                    </button>
-                    <button
-                        type="button"
-                        className="w-[65px] aspect-[1/1] flex justify-center items-center rounded-full"
-                    >
+                    </ActiveLink>
+                    <ActiveLink href="/files">
                         <FolderClosed size={40} />
-                    </button>
-                    <button
-                        type="button"
-                        className="w-[65px] aspect-[1/1] flex justify-center items-center rounded-full"
-                    >
-                        <User size={40} />
-                    </button>
+                    </ActiveLink>
+                    <ActiveLink href="/settings">
+                        <Settings size={40} />
+                    </ActiveLink>
                 </div>
             </div>
             <LogoutButton />

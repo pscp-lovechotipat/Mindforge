@@ -54,7 +54,7 @@ export default function LoginPage() {
             <div className="absolute bottom-0 left-1/2 -translate-x-1/2 translate-y-[calc(50%+40px)] w-[102%] h-[40%] bg-myslate-400 rounded-[100%]"></div>
             <div className="w-[500px] bg-myslate-900 p-8 rounded-xl border border-myslate-800 shadow-lg shadow-myslate-200/10">
                 <h1 className="text-center text-5xl font-bold mb-12">
-                    Sign in
+                    Sign In
                 </h1>
                 <div className="flex justify-end">
                     <Link
@@ -124,7 +124,7 @@ export default function LoginPage() {
                                     strokeWidth={2.5}
                                 />
                             ) : (
-                                "Signin"
+                                "Sign In"
                             )}
                         </Button>
                     </form>

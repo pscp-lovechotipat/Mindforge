@@ -8,6 +8,7 @@ import {
     Users,
 } from "lucide-react";
 import Link from "next/link";
+import ProjectActiveLink from "./ActiveLink";
 
 export default function ProjectSideBar() {
     return (
@@ -23,30 +24,18 @@ export default function ProjectSideBar() {
                     />
                 </Link>
                 <div className="space-y-6">
-                    <button
-                        type="button"
-                        className="w-[65px] aspect-[1/1] bg-white text-myslate-950 flex justify-center items-center rounded-full"
-                    >
+                    <ProjectActiveLink href="">
                         <ListTodo size={40} />
-                    </button>
-                    <button
-                        type="button"
-                        className="w-[65px] aspect-[1/1] flex justify-center items-center rounded-full"
-                    >
+                    </ProjectActiveLink>
+                    <ProjectActiveLink href="/teams">
                         <Users size={40} />
-                    </button>
-                    <button
-                        type="button"
-                        className="w-[65px] aspect-[1/1] flex justify-center items-center rounded-full"
-                    >
+                    </ProjectActiveLink>
+                    <ProjectActiveLink href="/calendar">
                         <CalendarDays size={40} />
-                    </button>
-                    <button
-                        type="button"
-                        className="w-[65px] aspect-[1/1] flex justify-center items-center rounded-full"
-                    >
+                    </ProjectActiveLink>
+                    <ProjectActiveLink href="/upload">
                         <FileUp size={40} />
-                    </button>
+                    </ProjectActiveLink>
                 </div>
             </div>
             <Link
