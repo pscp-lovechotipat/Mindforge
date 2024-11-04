@@ -1,5 +1,6 @@
 "use client";
 
+import createProject from "@/actions/createProject/createProject";
 import loadUsersAutocomplete from "@/actions/createProject/loadUsersAutocomplete";
 import { Button } from "@/components/ui/button";
 import {
@@ -20,11 +21,19 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { userContext } from "@/contexts/user";
 import formatFileSize from "@/utils/formatFileSize";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { File, LoaderCircle, Plus, Search, X } from "lucide-react";
-import { ChangeEvent, MouseEvent, useState } from "react";
+import {
+    ChangeEvent,
+    MouseEvent,
+    useContext,
+    useEffect,
+    useState,
+} from "react";
 import { useForm } from "react-hook-form";
+import toast from "react-hot-toast";
 import { z } from "zod";
 
 const formSchema = z.object({
@@ -35,7 +44,7 @@ const formSchema = z.object({
 interface UserAutocomplete {
     id: number;
     email: string;
-    profileUrl: string | null
+    profileUrl: string | null;
 }
 
 export function CreateProjectButton({ className }: { className?: string }) {
@@ -70,16 +79,33 @@ export function CreateProjectCard() {
 }
 
 function CreateProjectDialogContent() {
+    const [user] = useContext(userContext);
     const [isLoading, setLoading] = useState(false);
     const [files, setFiles] = useState<File[]>([]);
     const [users, setUsers] = useState<UserAutocomplete[]>([]);
-    const [usersAutocomplete, setUsersAutocomplete] = useState<UserAutocomplete[]>([]);
+    const [usersAutocomplete, setUsersAutocomplete] = useState<
+        UserAutocomplete[]
+    >([]);
 
     const form = useForm<z.infer<typeof formSchema>>({
         resolver: zodResolver(formSchema),
     });
 
-    async function onSubmit(values: z.infer<typeof formSchema>) {}
+    async function onSubmit(values: z.infer<typeof formSchema>) {
+        const filesFormatted = [];
+        for (const file of files) {
+            filesFormatted.push({
+                name: file.name,
+                buffer: Buffer.from(await file.arrayBuffer())
+            });
+        }
+        await createProject({
+            name: values.name,
+            description: values.description,
+            files: filesFormatted,
+            userIds: users.map((u) => u.id),
+        });
+    }
 
     const handleUploadFileClick = (event: MouseEvent<HTMLButtonElement>) => {
         event.preventDefault();
@@ -99,9 +125,10 @@ function CreateProjectDialogContent() {
         event: ChangeEvent<HTMLInputElement>
     ) => {
         event.preventDefault();
+        if (!user) return;
         const _usersAutocomplete = await loadUsersAutocomplete({
             query: event.target.value,
-            idNotIn: users.map(u => u.id)
+            idNotIn: [...users.map((u) => u.id), user.id],
         });
         setUsersAutocomplete(_usersAutocomplete);
     };
@@ -320,8 +347,7 @@ function CreateProjectDialogContent() {
                                             setUsers((u) => [...u, user]);
                                             setUsersAutocomplete((_users) => {
                                                 _users = _users.filter(
-                                                    (u) =>
-                                                        u.id !== user.id
+                                                    (u) => u.id !== user.id
                                                 );
                                                 return _users;
                                             });

@@ -1,12 +1,22 @@
+"use client";
+
 import SideBar from "@/components/Navigation/Sidebar";
 import { Input } from "@/components/ui/input";
+import { userContext } from "@/contexts/user";
 import { Bell, CalendarDays, ChevronDown, Search } from "lucide-react";
+import { useContext } from "react";
 
 export default function RuntimeLayout({
     children,
 }: {
     children: React.ReactNode;
 }) {
+    const [user] = useContext(userContext);
+
+    if (!user) {
+        return <></>;
+    }
+
     return (
         <div className="flex min-h-screen">
             <SideBar />
@@ -38,7 +48,7 @@ export default function RuntimeLayout({
                                 src="/mockup/nicenathapong_profile.jpg"
                                 alt="mockup"
                             />
-                            <h1 className="font-bold text-lg">Cscosmo</h1>
+                            <h1 className="font-bold text-lg">{user.firstName} {user.lastName}</h1>
                             <ChevronDown />
                         </button>
                     </div>

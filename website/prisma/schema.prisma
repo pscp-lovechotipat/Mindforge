@@ -14,15 +14,20 @@ datasource db {
 }
 
 model User {
-  id         Int      @id @default(autoincrement())
-  firstName  String   @db.VarChar(255)
-  lastName   String   @db.VarChar(255)
-  email      String   @unique @db.VarChar(255)
-  password   String   @db.VarChar(255)
-  profileUrl String?  @db.LongText
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
-  roles      Role[]
+  id          Int         @id @default(autoincrement())
+  aiServiceId String      @unique
+  firstName   String      @db.VarChar(255)
+  lastName    String      @db.VarChar(255)
+  email       String      @unique @db.VarChar(255)
+  password    String      @db.VarChar(255)
+  profileUrl  String?     @db.LongText
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+  roleId      Int?
+  role        Role?       @relation(fields: [roleId], references: [id], onUpdate: Cascade, onDelete: Cascade)
+  skils       Skill[]
+  workspaces  Workspace[]
+  todos       Todo[]
 }
 
 model Role {
@@ -30,4 +35,33 @@ model Role {
   name        String  @db.VarChar(255)
   description String? @db.VarChar(255)
   users       User[]
+}
+
+model Skill {
+  id          Int     @id @default(autoincrement())
+  name        String  @db.VarChar(255)
+  description String? @db.VarChar(255)
+  users       User[]
+}
+
+model Workspace {
+  id              Int    @id @default(autoincrement())
+  aiServiceId     String @unique
+  name            String @db.VarChar(255)
+  description     String @db.VarChar(10000)
+  analyzeResponse Json?
+  users           User[]
+}
+
+model Todo {
+  id        Int      @id @default(autoincrement())
+  userId    Int
+  name      String   @db.VarChar(255)
+  role      String   @db.VarChar(255)
+  status    Int      @default(0) // 0, 1, 2
+  priority  Int      @default(0) // 0, 1, 2
+  raw       Json?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  user      User     @relation(fields: [userId], references: [id], onUpdate: Cascade, onDelete: Cascade)
 }
