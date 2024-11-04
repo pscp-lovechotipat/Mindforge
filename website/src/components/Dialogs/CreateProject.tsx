@@ -99,12 +99,17 @@ function CreateProjectDialogContent() {
                 buffer: Buffer.from(await file.arrayBuffer())
             });
         }
-        await createProject({
+        setLoading(true);
+        const result = await createProject({
             name: values.name,
             description: values.description,
             files: filesFormatted,
             userIds: users.map((u) => u.id),
         });
+        setLoading(false);
+        if (!result?.success) {
+            return toast.error(result?.message ?? "Server Error, Please try again later.");
+        }
     }
 
     const handleUploadFileClick = (event: MouseEvent<HTMLButtonElement>) => {
