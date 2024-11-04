@@ -1,0 +1,1212 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <title>Team Analysis API Test UI</title>
+    
+    <!-- Vis.js -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/vis/4.21.0/vis.min.js"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/vis/4.21.0/vis.min.css" rel="stylesheet">
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <!-- CORS Headers -->
+    <meta http-equiv="Access-Control-Allow-Origin" content="*">
+    <meta http-equiv="Access-Control-Allow-Methods" content="GET, POST, PUT, DELETE, OPTIONS">
+    <meta http-equiv="Access-Control-Allow-Headers" content="Content-Type">
+
+    <title>Team Analysis API Test UI</title>
+    <!-- Vis.js for graph visualization -->
+    <script type="text/javascript" src="https://unpkg.com/vis-network/standalone/umd/vis-network.min.js"></script>
+    <!-- Tailwind CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <!-- Custom styles -->
+    <style>
+        /* Global styles */
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen-Sans, Ubuntu, Cantarell, "Helvetica Neue", sans-serif;
+            line-height: 1.5;
+            color: #1a1a1a;
+        }
+
+        /* Graph container */
+        #graph-container {
+            width: 100%;
+            height: 600px;
+            border: 1px solid #e5e7eb;
+            background-color: white;
+            border-radius: 0.5rem;
+            overflow: hidden;
+        }
+
+        /* Loading overlay */
+        .loading {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(255, 255, 255, 0.9);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            pointer-events: none;
+        }
+
+        .loading.blocking {
+            pointer-events: auto;
+        }
+
+        .loading-spinner {
+            width: 50px;
+            height: 50px;
+            border: 4px solid #e5e7eb;
+            border-top: 4px solid #3b82f6;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        .loading-text {
+            margin-top: 1rem;
+            color: #4b5563;
+            font-weight: 500;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* Button loading state */
+        button.loading {
+            position: relative;
+            pointer-events: none;
+            opacity: 0.7;
+        }
+
+        button.loading::after {
+            content: "";
+            position: absolute;
+            width: 1rem;
+            height: 1rem;
+            top: 50%;
+            left: 50%;
+            margin: -0.5rem;
+            border: 2px solid transparent;
+            border-top-color: currentColor;
+            border-radius: 50%;
+            animation: button-spin 1s linear infinite;
+        }
+
+        @keyframes button-spin {
+            to { transform: rotate(360deg); }
+        }
+
+        /* Custom scrollbar */
+        .custom-scrollbar {
+            scrollbar-width: thin;
+            scrollbar-color: #cbd5e0 #f7fafc;
+        }
+
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: #f7fafc;
+        }
+
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background-color: #cbd5e0;
+            border-radius: 3px;
+        }
+
+        /* Modal animation */
+        .modal {
+            transition: opacity 0.2s ease-in-out;
+        }
+
+        .modal.hidden {
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        /* Toast notifications */
+        .toast {
+            position: fixed;
+            bottom: 1rem;
+            right: 1rem;
+            padding: 1rem;
+            border-radius: 0.5rem;
+            background: white;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            z-index: 1001;
+            transition: transform 0.3s ease-in-out;
+            transform: translateY(100%);
+        }
+
+        .toast.show {
+            transform: translateY(0);
+        }
+
+        /* Status and priority badges */
+        .status-badge {
+            padding: 0.25rem 0.75rem;
+            border-radius: 9999px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: capitalize;
+        }
+
+        .priority-badge {
+            padding: 0.25rem 0.75rem;
+            border-radius: 9999px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: capitalize;
+        }
+
+        /* Tab transitions */
+        .tab-content {
+            transition: opacity 0.3s ease-in-out;
+        }
+
+        .tab-content.hidden {
+            opacity: 0;
+            pointer-events: none;
+        }
+    </style>
+</head>
+<body class="bg-gray-50 min-h-screen">
+    <!-- Loading overlay -->
+    <div id="loading" class="loading hidden">
+        <div class="loading-spinner"></div>
+        <div class="loading-text">Processing...</div>
+    </div>
+
+    <!-- Toast notification -->
+    <div id="toast" class="toast hidden">
+        <div class="flex items-center">
+            <div id="toast-icon" class="mr-3"></div>
+            <div id="toast-message"></div>
+        </div>
+    </div>
+
+    <div class="container mx-auto px-4 py-8">
+        <!-- Navigation -->
+        <div class="mb-8">
+            <div class="sm:hidden">
+                <select id="mobile-tabs" 
+                        class="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50"
+                        onchange="showTab(this.value)">
+                    <option value="workspace">Workspace Setup</option>
+                    <option value="graph">Graph View</option>
+                    <option value="tasks">Task Management</option>
+                    <option value="test">API Tests</option>
+                </select>
+            </div>
+            <div class="hidden sm:block">
+                <nav class="flex space-x-4" aria-label="Tabs">
+                    <button onclick="showTab('workspace')" 
+                            class="tab-button px-3 py-2 font-medium text-sm rounded-md"
+                            role="tab">
+                        Workspace Setup
+                    </button>
+                    <button onclick="showTab('graph')"
+                            class="tab-button px-3 py-2 font-medium text-sm rounded-md"
+                            role="tab">
+                        Graph View
+                    </button>
+                    <button onclick="showTab('tasks')"
+                            class="tab-button px-3 py-2 font-medium text-sm rounded-md"
+                            role="tab">
+                        Task Management
+                    </button>
+                    <button onclick="showTab('test')"
+                            class="tab-button px-3 py-2 font-medium text-sm rounded-md"
+                            role="tab">
+                        API Tests
+                    </button>
+                </nav>
+            </div>
+        </div>
+<!-- Content Sections -->
+        
+        <!-- Workspace Setup Tab -->
+        <div id="workspace-tab" class="tab-content">
+            <div class="bg-white shadow rounded-lg p-6">
+                <h2 class="text-xl font-semibold mb-6">Workspace Setup</h2>
+                <form id="setupForm" class="space-y-6">
+                    <!-- Workspace ID -->
+                    <div>
+                        <label for="workspaceId" class="block text-sm font-medium text-gray-700">
+                            Workspace ID
+                        </label>
+                        <div class="mt-1">
+                            <input type="text" id="workspaceId" required
+                                   class="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md"
+                                   placeholder="Enter workspace identifier">
+                        </div>
+                        <p class="mt-2 text-sm text-gray-500">
+                            Unique identifier for your workspace
+                        </p>
+                    </div>
+
+                    <!-- Document Upload -->
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700">
+                            Upload Documents
+                        </label>
+                        <div class="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-gray-300 border-dashed rounded-md">
+                            <div class="space-y-1 text-center">
+                                <svg class="mx-auto h-12 w-12 text-gray-400" stroke="currentColor" fill="none" viewBox="0 0 48 48" aria-hidden="true">
+                                    <path d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8m-12 4h.02" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+                                </svg>
+                                <div class="flex text-sm text-gray-600">
+                                    <label for="documents" class="relative cursor-pointer bg-white rounded-md font-medium text-indigo-600 hover:text-indigo-500 focus-within:outline-none focus-within:ring-2 focus-within:ring-offset-2 focus-within:ring-indigo-500">
+                                        <span>Upload files</span>
+                                        <input id="documents" type="file" multiple accept=".pdf,.txt,.md" class="sr-only">
+                                    </label>
+                                    <p class="pl-1">or drag and drop</p>
+                                </div>
+                                <p class="text-xs text-gray-500">
+                                    PDF, TXT, MD up to 10MB each
+                                </p>
+                            </div>
+                        </div>
+                        <div id="fileList" class="mt-2 space-y-2"></div>
+                    </div>
+
+                    <!-- Team Details -->
+                    <div>
+                        <label for="teamDetails" class="block text-sm font-medium text-gray-700">
+                            Team Details (JSON)
+                        </label>
+                        <div class="mt-1">
+                            <textarea id="teamDetails" rows="8" required
+                                      class="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md"></textarea>
+                        </div>
+                        <button type="button" onclick="loadSampleTeam()" 
+                                class="mt-2 inline-flex items-center px-2.5 py-1.5 border border-gray-300 shadow-sm text-xs font-medium rounded text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                            Load Sample Team
+                        </button>
+                    </div>
+
+                    <!-- Submit Button -->
+                    <div>
+                        <button type="submit"
+                                class="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                            Create Workspace
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Graph View Tab -->
+        <div id="graph-tab" class="tab-content hidden">
+            <div class="bg-white shadow rounded-lg p-6">
+                <div class="flex justify-between items-center mb-6">
+                    <h2 class="text-xl font-semibold">Graph Visualization</h2>
+                    <div class="flex space-x-4">
+                        <button onclick="refreshGraph()" 
+                                class="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                            <svg class="h-4 w-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                            </svg>
+                            Refresh
+                        </button>
+                        <select id="layoutSelect" onchange="updateLayout()"
+                                class="block w-48 pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md">
+                            <option value="hierarchical">Hierarchical Layout</option>
+                            <option value="force">Force Directed Layout</option>
+                        </select>
+                    </div>
+                </div>
+                <div id="graph-container"></div>
+            </div>
+        </div>
+
+        <!-- Task Management Tab -->
+        <div id="tasks-tab" class="tab-content hidden">
+            <div class="bg-white shadow rounded-lg p-6">
+                <div class="flex justify-between items-center mb-6">
+                    <h2 class="text-xl font-semibold">Task Management</h2>
+                    <div class="flex space-x-4">
+                        <button onclick="openAddTaskModal()"
+                                class="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500">
+                            <svg class="h-4 w-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                            </svg>
+                            Add Task
+                        </button>
+                        <button onclick="refreshTasks()"
+                                class="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                            <svg class="h-4 w-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                            </svg>
+                            Refresh
+                        </button>
+                    </div>
+                </div>
+                <div id="tasksContainer" class="overflow-x-auto"></div>
+            </div>
+        </div>
+
+        <!-- API Tests Tab -->
+        <div id="test-tab" class="tab-content hidden">
+            <div class="bg-white shadow rounded-lg p-6">
+                <h2 class="text-xl font-semibold mb-6">API Tests</h2>
+                <div class="space-y-4">
+                    <div class="flex flex-col space-y-4">
+                        <button onclick="testHealthCheck()" 
+                                class="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500">
+                            Test Health Check
+                        </button>
+                        <button onclick="testAnalyze()"
+                                class="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                            Test Analysis
+                        </button>
+                        <button onclick="testTaskOperations()"
+                                class="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-purple-600 hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500">
+                            Test Task Operations
+                        </button>
+                    </div>
+                    <div id="testResults" class="mt-4 bg-gray-50 rounded-md p-4 h-96 overflow-y-auto">
+                        <pre class="text-sm text-gray-700 whitespace-pre-wrap"></pre>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <!-- Add Task Modal -->
+        <div id="addTaskModal" class="fixed inset-0 overflow-y-auto hidden" aria-labelledby="modal-title" role="dialog" aria-modal="true">
+            <div class="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
+                <!-- Background overlay -->
+                <div class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" aria-hidden="true"></div>
+                
+                <!-- Modal panel -->
+                <div class="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full">
+                    <form id="addTaskForm" class="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
+                        <div class="sm:flex sm:items-start">
+                            <div class="mt-3 text-center sm:mt-0 sm:text-left w-full">
+                                <h3 class="text-lg leading-6 font-medium text-gray-900" id="modal-title">
+                                    Add New Task
+                                </h3>
+                                <div class="mt-4 space-y-4">
+                                    <!-- Role Selection -->
+                                    <div>
+                                        <label for="taskRole" class="block text-sm font-medium text-gray-700">Role</label>
+                                        <select id="taskRole" required
+                                                class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md">
+                                        </select>
+                                    </div>
+                                    
+                                    <!-- Task Name -->
+                                    <div>
+                                        <label for="taskName" class="block text-sm font-medium text-gray-700">Task Name</label>
+                                        <input type="text" id="taskName" required
+                                               class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+                                    </div>
+                                    
+                                    <!-- Description -->
+                                    <div>
+                                        <label for="taskDescription" class="block text-sm font-medium text-gray-700">Description</label>
+                                        <textarea id="taskDescription" rows="3"
+                                                  class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"></textarea>
+                                    </div>
+                                    
+                                    <!-- Priority -->
+                                    <div>
+                                        <label for="taskPriority" class="block text-sm font-medium text-gray-700">Priority</label>
+                                        <select id="taskPriority"
+                                                class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md">
+                                            <option value="low">Low</option>
+                                            <option value="medium" selected>Medium</option>
+                                            <option value="high">High</option>
+                                        </select>
+                                    </div>
+                                    
+                                    <!-- Estimated Hours -->
+                                    <div>
+                                        <label for="taskHours" class="block text-sm font-medium text-gray-700">Estimated Hours</label>
+                                        <input type="number" id="taskHours" value="0" min="0" step="0.5"
+                                               class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="mt-5 sm:mt-4 sm:flex sm:flex-row-reverse">
+                            <button type="submit"
+                                    class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-indigo-600 text-base font-medium text-white hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:ml-3 sm:w-auto sm:text-sm">
+                                Add Task
+                            </button>
+                            <button type="button" onclick="closeModal('addTaskModal')"
+                                    class="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:mt-0 sm:w-auto sm:text-sm">
+                                Cancel
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- Start JavaScript -->
+    <script>
+        // Configuration
+        const API_BASE_URL = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' 
+        ? 'http://localhost:8000'  // Development
+        : 'https://your-production-api.com';  // Production
+        let network = null;
+        let graphData = null;
+
+        // Request management
+        const requestQueue = {
+            queue: [],
+            processing: false,
+            
+            async add(request) {
+                return new Promise((resolve, reject) => {
+                    this.queue.push({ request, resolve, reject });
+                    this.process();
+                });
+            },
+            
+            async process() {
+                if (this.processing || this.queue.length === 0) return;
+                
+                this.processing = true;
+                const { request, resolve, reject } = this.queue.shift();
+                
+                try {
+                    const result = await request();
+                    resolve(result);
+                } catch (error) {
+                    reject(error);
+                } finally {
+                    this.processing = false;
+                    this.process();
+                }
+            }
+        };
+
+        // Loading management
+        let loadingCount = 0;
+
+        function showLoading() {
+            loadingCount++;
+            if (loadingCount === 1) {
+                document.getElementById('loading').classList.remove('hidden');
+            }
+        }
+
+        function hideLoading() {
+            loadingCount--;
+            if (loadingCount <= 0) {
+                loadingCount = 0;
+                document.getElementById('loading').classList.add('hidden');
+            }
+        }
+
+        // Toast notifications
+        function showToast(message, type = 'success') {
+            const toast = document.getElementById('toast');
+            const icon = document.getElementById('toast-icon');
+            const messageEl = document.getElementById('toast-message');
+            
+            const icons = {
+                success: '✓',
+                error: '✕',
+                warning: '⚠',
+                info: 'ℹ'
+            };
+            
+            const colors = {
+                success: 'bg-green-100 text-green-800',
+                error: 'bg-red-100 text-red-800',
+                warning: 'bg-yellow-100 text-yellow-800',
+                info: 'bg-blue-100 text-blue-800'
+            };
+            
+            icon.textContent = icons[type] || icons.info;
+            icon.className = `${colors[type]} rounded-full w-6 h-6 flex items-center justify-center`;
+            messageEl.textContent = message;
+            
+            toast.classList.remove('hidden');
+            toast.classList.add('show');
+            
+            setTimeout(() => {
+                toast.classList.remove('show');
+                setTimeout(() => toast.classList.add('hidden'), 300);
+            }, 3000);
+        }
+
+        // Error handling
+        function handleError(error, action = '') {
+            console.error(`Error ${action}:`, error);
+            hideLoading();
+            showToast(error.message || 'An error occurred', 'error');
+            loadingCount = 0;
+        }
+        // Fetch helper with timeout
+        async function fetchWithTimeout(url, options = {}, timeout = 10000) {
+            const controller = new AbortController();
+            const id = setTimeout(() => controller.abort(), timeout);
+            
+            try {
+                const response = await fetch(url, {
+                    ...options,
+                    signal: controller.signal
+                });
+                clearTimeout(id);
+                return response;
+            } catch (error) {
+                clearTimeout(id);
+                if (error.name === 'AbortError') {
+                    throw new Error('Request timed out');
+                }
+                throw error;
+            }
+        }
+
+        // Tab Management
+        function showTab(tabName) {
+            document.querySelectorAll('.tab-content').forEach(tab => tab.classList.add('hidden'));
+            document.querySelectorAll('.tab-button').forEach(btn => {
+                btn.classList.remove('border-indigo-500', 'text-indigo-600');
+                btn.classList.add('border-transparent', 'text-gray-500', 'hover:text-gray-700', 'hover:border-gray-300');
+            });
+            
+            const targetTab = document.getElementById(`${tabName}-tab`);
+            const activeBtn = document.querySelector(`[onclick="showTab('${tabName}')"]`);
+            
+            if (targetTab && activeBtn) {
+                targetTab.classList.remove('hidden');
+                activeBtn.classList.remove('border-transparent', 'text-gray-500', 'hover:text-gray-700', 'hover:border-gray-300');
+                activeBtn.classList.add('border-indigo-500', 'text-indigo-600');
+                
+                // Update mobile select if exists
+                const mobileSelect = document.getElementById('mobile-tabs');
+                if (mobileSelect) {
+                    mobileSelect.value = tabName;
+                }
+
+                // Initialize tab-specific content
+                if (tabName === 'graph') {
+                    refreshGraph();
+                } else if (tabName === 'tasks') {
+                    refreshTasks();
+                }
+            }
+        }
+
+        // Modal Management
+        function openModal(modalId) {
+            const modal = document.getElementById(modalId);
+            if (modal) {
+                modal.classList.remove('hidden');
+            }
+        }
+
+        function closeModal(modalId) {
+            const modal = document.getElementById(modalId);
+            if (modal) {
+                modal.classList.add('hidden');
+                // Reset form if exists
+                const form = modal.querySelector('form');
+                if (form) {
+                    form.reset();
+                }
+            }
+        }
+
+        // File Management
+        document.getElementById('documents').addEventListener('change', function(event) {
+            const fileList = document.getElementById('fileList');
+            fileList.innerHTML = '';
+            
+            Array.from(event.target.files).forEach(file => {
+                const fileSize = (file.size / 1024 / 1024).toFixed(2);
+                fileList.innerHTML += `
+                    <div class="flex items-center justify-between py-2 text-sm">
+                        <div class="flex items-center">
+                            <svg class="h-4 w-4 text-gray-400 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"></path>
+                            </svg>
+                            <span class="text-gray-900">${file.name}</span>
+                        </div>
+                        <span class="text-gray-500">${fileSize} MB</span>
+                    </div>
+                `;
+            });
+        });
+
+        // Sample Data
+        const sampleTeamDetails = {
+            "team_members": {
+                "John Doe": {
+                    "current_role": "Software Developer",
+                    "skills": [
+                        "Python", "JavaScript", "Docker", "FastAPI", 
+                        "React", "Node.js", "MongoDB", "PostgreSQL"
+                    ],
+                    "experience": "5 years in full-stack development with focus on scalable applications"
+                },
+                "Jane Smith": {
+                    "current_role": "UX Designer",
+                    "skills": [
+                        "UI/UX Design", "Figma", "User Research", 
+                        "Wireframing", "Prototyping", "Adobe XD",
+                        "User Testing", "Information Architecture"
+                    ],
+                    "experience": "3 years in product design for enterprise applications"
+                },
+                "Mike Johnson": {
+                    "current_role": "Project Manager",
+                    "skills": [
+                        "Agile", "Scrum", "Risk Management", 
+                        "JIRA", "Confluence", "MS Project",
+                        "Stakeholder Management", "Budget Planning"
+                    ],
+                    "experience": "7 years in IT project management with focus on agile methodologies"
+                }
+            }
+        };
+
+        function loadSampleTeam() {
+            document.getElementById('teamDetails').value = JSON.stringify(sampleTeamDetails, null, 2);
+        }
+
+        // Workspace Setup
+        async function handleSetup(event) {
+            event.preventDefault();
+            
+            const workspaceId = document.getElementById('workspaceId').value;
+            if (!workspaceId) {
+                showToast('Workspace ID is required', 'error');
+                return;
+            }
+
+            const files = document.getElementById('documents').files;
+            if (files.length === 0) {
+                showToast('Please select at least one document', 'error');
+                return;
+            }
+
+            const teamDetails = document.getElementById('teamDetails').value;
+            try {
+                JSON.parse(teamDetails);
+            } catch (e) {
+                showToast('Invalid JSON in team details', 'error');
+                return;
+            }
+
+            await requestQueue.add(async () => {
+                showLoading();
+                try {
+                    const formData = new FormData();
+                    formData.append('workspace_id', workspaceId);
+                    formData.append('team_details', teamDetails);
+                    
+                    for (let file of files) {
+                        formData.append('files', file);
+                    }
+
+                    const response = await fetchWithTimeout(
+                        `${API_BASE_URL}/analyze`,
+                        {
+                            method: 'POST',
+                            body: formData
+                        }
+                    );
+
+                    const result = await response.json();
+                    if (!response.ok) {
+                        throw new Error(result.detail || 'Analysis failed');
+                    }
+
+                    showToast('Workspace setup successful!', 'success');
+                    showTab('graph');
+                    return result;
+
+                } catch (error) {
+                    handleError(error, 'during workspace setup');
+                    throw error;
+                } finally {
+                    hideLoading();
+                }
+            });
+        }
+
+        // Initialize form handler
+        document.getElementById('setupForm').addEventListener('submit', handleSetup);
+        // Graph Visualization
+        async function refreshGraph() {
+            const workspaceId = document.getElementById('workspaceId').value;
+            if (!workspaceId) {
+                showToast('Please enter a workspace ID first', 'warning');
+                showTab('workspace');
+                return;
+            }
+
+            await requestQueue.add(async () => {
+                showLoading();
+                try {
+                    const response = await fetchWithTimeout(`${API_BASE_URL}/workspace/${workspaceId}/graph`);
+                    if (!response.ok) {
+                        const error = await response.json();
+                        throw new Error(error.detail || 'Failed to load graph');
+                    }
+
+                    const data = await response.json();
+                    
+                    // Convert data for vis.js
+                    const nodes = new vis.DataSet(
+                        data.nodes.map(node => ({
+                            id: node.id,
+                            label: node.label,
+                            group: node.type,
+                            title: generateNodeTooltip(node),
+                        }))
+                    );
+
+                    const edges = new vis.DataSet(
+                        data.edges.map(edge => ({
+                            id: edge.id,
+                            from: edge.from,
+                            to: edge.to,
+                            label: edge.type,
+                            arrows: 'to'
+                        }))
+                    );
+
+                    graphData = { nodes, edges };
+
+                    // Create or update network
+                    const container = document.getElementById('graph-container');
+                    const options = {
+                        nodes: {
+                            shape: 'dot',
+                            size: 16,
+                            font: {
+                                size: 12,
+                                face: 'Tahoma'
+                            },
+                            borderWidth: 2,
+                            shadow: true
+                        },
+                        edges: {
+                            width: 2,
+                            shadow: true,
+                            smooth: {
+                                type: 'continuous'
+                            },
+                            font: {
+                                size: 10,
+                                face: 'Tahoma'
+                            }
+                        },
+                        groups: {
+                            Person: {
+                                color: { background: '#ffcdd2', border: '#e57373' },
+                                shape: 'diamond'
+                            },
+                            Role: {
+                                color: { background: '#bbdefb', border: '#64b5f6' },
+                                shape: 'dot'
+                            },
+                            Task: {
+                                color: { background: '#c8e6c9', border: '#81c784' },
+                                shape: 'square'
+                            },
+                            Workspace: {
+                                color: { background: '#fff9c4', border: '#fff176' },
+                                shape: 'triangle'
+                            }
+                        },
+                        physics: {
+                            enabled: true,
+                            barnesHut: {
+                                gravitationalConstant: -2000,
+                                centralGravity: 0.3,
+                                springLength: 95,
+                                springConstant: 0.04,
+                                damping: 0.09
+                            }
+                        },
+                        interaction: {
+                            hover: true,
+                            tooltipDelay: 200,
+                            zoomView: true,
+                            dragView: true
+                        }
+                    };
+
+                    if (network) {
+                        network.destroy();
+                    }
+                    network = new vis.Network(container, graphData, options);
+
+                    // Add event listeners
+                    network.on('click', function(params) {
+                        if (params.nodes.length > 0) {
+                            const nodeId = params.nodes[0];
+                            const node = graphData.nodes.get(nodeId);
+                            if (node.group === 'Task') {
+                                openEditTaskModal(nodeId);
+                            }
+                        }
+                    });
+
+                    network.on('stabilizationProgress', function(params) {
+                        const progress = Math.round(params.iterations / params.total * 100);
+                        showToast(`Loading graph: ${progress}%`, 'info');
+                    });
+
+                    network.once('stabilizationIterationsDone', function() {
+                        showToast('Graph loaded successfully', 'success');
+                    });
+
+                    updateLayout();
+
+                } catch (error) {
+                    handleError(error, 'loading graph');
+                    network = null;
+                } finally {
+                    hideLoading();
+                }
+            });
+        }
+
+        function generateNodeTooltip(node) {
+            let tooltip = `<div class="p-2">
+                <strong>Type:</strong> ${node.type}<br>`;
+            
+            if (node.status) tooltip += `<strong>Status:</strong> ${node.status}<br>`;
+            if (node.priority) tooltip += `<strong>Priority:</strong> ${node.priority}<br>`;
+            if (node.assignee) tooltip += `<strong>Assigned to:</strong> ${node.assignee}<br>`;
+            if (node.created_at) tooltip += `<strong>Created:</strong> ${new Date(node.created_at).toLocaleString()}<br>`;
+            if (node.description) tooltip += `<strong>Description:</strong> ${node.description}<br>`;
+            
+            tooltip += '</div>';
+            return tooltip;
+        }
+
+        function updateLayout() {
+            if (!network) return;
+            
+            const layout = document.getElementById('layoutSelect').value;
+            const options = {
+                physics: {
+                    enabled: layout === 'force'
+                },
+                layout: {
+                    hierarchical: {
+                        enabled: layout === 'hierarchical',
+                        direction: 'LR',
+                        sortMethod: 'directed',
+                        nodeSpacing: 150,
+                        treeSpacing: 200
+                    }
+                }
+            };
+            
+            network.setOptions(options);
+        }
+
+        // Task Management
+        async function refreshTasks() {
+            const workspaceId = document.getElementById('workspaceId').value;
+            if (!workspaceId) {
+                showToast('Please enter a workspace ID first', 'warning');
+                showTab('workspace');
+                return;
+            }
+
+            await requestQueue.add(async () => {
+                showLoading();
+                try {
+                    const response = await fetchWithTimeout(`${API_BASE_URL}/workspace/${workspaceId}/tasks`);
+                    if (!response.ok) {
+                        const error = await response.json();
+                        throw new Error(error.detail || 'Failed to load tasks');
+                    }
+
+                    const tasks = await response.json();
+                    const container = document.getElementById('tasksContainer');
+
+                    if (Object.keys(tasks).length === 0) {
+                        container.innerHTML = `
+                            <div class="text-center py-6 text-gray-500">
+                                No tasks found. Click "Add Task" to create one.
+                            </div>
+                        `;
+                        return;
+                    }
+
+                    container.innerHTML = `
+                        <table class="min-w-full divide-y divide-gray-200">
+                            <thead class="bg-gray-50">
+                                <tr>
+                                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Task</th>
+                                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Assignee</th>
+                                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Role</th>
+                                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Priority</th>
+                                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody class="bg-white divide-y divide-gray-200">
+                                ${Object.entries(tasks).map(([person, personTasks]) => 
+                                    personTasks.map(task => `
+                                        <tr>
+                                            <td class="px-6 py-4 whitespace-nowrap">
+                                                <div class="text-sm font-medium text-gray-900">${task.task}</div>
+                                            </td>
+                                            <td class="px-6 py-4 whitespace-nowrap">
+                                                <div class="text-sm text-gray-500">${person}</div>
+                                            </td>
+                                            <td class="px-6 py-4 whitespace-nowrap">
+                                                <div class="text-sm text-gray-500">${task.role}</div>
+                                            </td>
+                                            <td class="px-6 py-4 whitespace-nowrap">
+                                                <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${getStatusColor(task.status)}">
+                                                    ${task.status || 'pending'}
+                                                </span>
+                                            </td>
+                                            <td class="px-6 py-4 whitespace-nowrap">
+                                                <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${getPriorityColor(task.priority)}">
+                                                    ${task.priority || 'medium'}
+                                                </span>
+                                            </td>
+                                            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                                                <button onclick="updateTaskStatus('${task.node_id}', 'completed')"
+                                                        class="text-indigo-600 hover:text-indigo-900 mr-3">
+                                                    Complete
+                                                </button>
+                                                <button onclick="deleteTask('${task.node_id}')"
+                                                        class="text-red-600 hover:text-red-900">
+                                                    Delete
+                                                </button>
+                                            </td>
+                                        </tr>
+                                    `).join('')
+                                ).join('')}
+                            </tbody>
+                        </table>
+                    `;
+
+                } catch (error) {
+                    handleError(error, 'loading tasks');
+                } finally {
+                    hideLoading();
+                }
+            });
+        }
+        function getStatusColor(status) {
+            const colors = {
+                pending: 'bg-yellow-100 text-yellow-800',
+                in_progress: 'bg-blue-100 text-blue-800',
+                completed: 'bg-green-100 text-green-800'
+            };
+            return colors[status] || colors.pending;
+        }
+
+        function getPriorityColor(priority) {
+            const colors = {
+                low: 'bg-gray-100 text-gray-800',
+                medium: 'bg-yellow-100 text-yellow-800',
+                high: 'bg-red-100 text-red-800'
+            };
+            return colors[priority] || colors.medium;
+        }
+
+        async function openAddTaskModal() {
+            const workspaceId = document.getElementById('workspaceId').value;
+            if (!workspaceId) {
+                showToast('Please enter a workspace ID first', 'warning');
+                return;
+            }
+
+            await requestQueue.add(async () => {
+                showLoading();
+                try {
+                    const response = await fetchWithTimeout(`${API_BASE_URL}/workspace/${workspaceId}/graph`);
+                    if (!response.ok) {
+                        throw new Error('Failed to load roles');
+                    }
+
+                    const data = await response.json();
+                    const roles = data.nodes
+                        .filter(node => node.type === 'Role')
+                        .map(role => role.label);
+
+                    if (roles.length === 0) {
+                        throw new Error('No roles found in workspace');
+                    }
+
+                    const roleSelect = document.getElementById('taskRole');
+                    roleSelect.innerHTML = roles
+                        .map(role => `<option value="${role}">${role}</option>`)
+                        .join('');
+
+                    openModal('addTaskModal');
+                } catch (error) {
+                    handleError(error, 'loading roles');
+                } finally {
+                    hideLoading();
+                }
+            });
+        }
+
+        async function handleAddTask(event) {
+            event.preventDefault();
+            
+            const workspaceId = document.getElementById('workspaceId').value;
+            if (!workspaceId) {
+                showToast('Workspace ID is required', 'error');
+                return;
+            }
+
+            await requestQueue.add(async () => {
+                showLoading();
+                try {
+                    const formData = new FormData();
+                    formData.append('role_name', document.getElementById('taskRole').value);
+                    formData.append('task_name', document.getElementById('taskName').value);
+                    formData.append('description', document.getElementById('taskDescription').value);
+                    formData.append('priority', document.getElementById('taskPriority').value);
+                    formData.append('estimated_hours', document.getElementById('taskHours').value);
+
+                    const response = await fetchWithTimeout(
+                        `${API_BASE_URL}/workspace/${workspaceId}/task`,
+                        {
+                            method: 'POST',
+                            body: formData
+                        }
+                    );
+
+                    if (!response.ok) {
+                        const error = await response.json();
+                        throw new Error(error.detail || 'Failed to add task');
+                    }
+
+                    showToast('Task added successfully', 'success');
+                    closeModal('addTaskModal');
+                    document.getElementById('addTaskForm').reset();
+                    await Promise.all([refreshTasks(), refreshGraph()]);
+
+                } catch (error) {
+                    handleError(error, 'adding task');
+                } finally {
+                    hideLoading();
+                }
+            });
+        }
+
+        async function updateTaskStatus(taskId, status) {
+            const workspaceId = document.getElementById('workspaceId').value;
+            
+            await requestQueue.add(async () => {
+                showLoading();
+                try {
+                    const response = await fetchWithTimeout(
+                        `${API_BASE_URL}/workspace/${workspaceId}/node/${taskId}`,
+                        {
+                            method: 'PUT',
+                            headers: {
+                                'Content-Type': 'application/json'
+                            },
+                            body: JSON.stringify({
+                                status: status,
+                                updated_at: new Date().toISOString()
+                            })
+                        }
+                    );
+
+                    if (!response.ok) {
+                        throw new Error('Failed to update task status');
+                    }
+
+                    showToast('Task status updated successfully', 'success');
+                    await Promise.all([refreshTasks(), refreshGraph()]);
+
+                } catch (error) {
+                    handleError(error, 'updating task status');
+                } finally {
+                    hideLoading();
+                }
+            });
+        }
+
+        async function deleteTask(taskId) {
+            if (!confirm('Are you sure you want to delete this task?')) {
+                return;
+            }
+
+            const workspaceId = document.getElementById('workspaceId').value;
+            
+            await requestQueue.add(async () => {
+                showLoading();
+                try {
+                    const response = await fetchWithTimeout(
+                        `${API_BASE_URL}/workspace/${workspaceId}/node/${taskId}`,
+                        { method: 'DELETE' }
+                    );
+
+                    if (!response.ok) {
+                        throw new Error('Failed to delete task');
+                    }
+
+                    showToast('Task deleted successfully', 'success');
+                    await Promise.all([refreshTasks(), refreshGraph()]);
+
+                } catch (error) {
+                    handleError(error, 'deleting task');
+                } finally {
+                    hideLoading();
+                }
+            });
+        }
+
+        // API Testing Functions
+        async function testHealthCheck() {
+            await requestQueue.add(async () => {
+                showLoading();
+                try {
+                    const response = await fetchWithTimeout(`${API_BASE_URL}/health`);
+                    const result = await response.json();
+                    displayTestResult('Health Check', result);
+                    showToast('Health check completed', 'info');
+                } catch (error) {
+                    displayTestResult('Health Check', { error: error.message });
+                    handleError(error, 'checking health');
+                } finally {
+                    hideLoading();
+                }
+            });
+        }
+
+        function displayTestResult(testName, result) {
+            const resultsDiv = document.querySelector('#testResults pre');
+            resultsDiv.innerHTML += `\n=== ${testName} ===\n${JSON.stringify(result, null, 2)}\n`;
+            resultsDiv.scrollTop = resultsDiv.scrollHeight;
+        }
+
+        // Initialize form handlers
+        document.addEventListener('DOMContentLoaded', function() {
+            loadSampleTeam();
+            document.getElementById('setupForm').addEventListener('submit', handleSetup);
+            document.getElementById('addTaskForm').addEventListener('submit', handleAddTask);
+            showTab('workspace');
+        });
+    </script>
+</body>
+</html>

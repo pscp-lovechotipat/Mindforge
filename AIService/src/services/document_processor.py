@@ -1,18 +1,49 @@
 from typing import List, Dict, Any
+from langchain_community.document_loaders import PyPDFLoader, TextLoader, UnstructuredMarkdownLoader
+from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.output_parsers import StrOutputParser
 import json
 import time
 from tenacity import retry, stop_after_attempt, wait_exponential
-from document_processing import load_documents
-from get_model_and_embeding import get_llm
+
+def load_documents(file_paths: List[str]) -> List[Any]:
+    print("Loading documents...")
+    documents = []
+    
+    for file_path in file_paths:
+        if file_path.endswith('.pdf'):
+            loader = PyPDFLoader(file_path)
+        elif file_path.endswith('.txt'):
+            loader = TextLoader(file_path)
+        elif file_path.endswith('.md'):
+            loader = UnstructuredMarkdownLoader(file_path)
+        else:
+            print(f"Unsupported file type: {file_path}")
+            continue
+        documents.extend(loader.load())
+    print(f"Loaded {len(documents)} documents.")
+    return documents
+
+def split_documents(
+    documents: List[Any], 
+    chunk_size_split: int = 10000, 
+    chunk_overlap_split: int = 1000
+) -> List[Any]:
+    print("Splitting documents into chunks...")
+    text_splitter = RecursiveCharacterTextSplitter(
+        chunk_size=chunk_size_split, 
+        chunk_overlap=chunk_overlap_split
+    )
+    split_docs = text_splitter.split_documents(documents)
+    print(f"Split into {len(split_docs)} chunks.")
+    return split_docs
 
 @retry(
     stop=stop_after_attempt(3),
     wait=wait_exponential(multiplier=1, min=4, max=10),
     retry_error_callback=lambda retry_state: {}
 )
-
 def process_single_document(
     doc_content: str,
     current_roles: List[str],
@@ -20,8 +51,6 @@ def process_single_document(
     output_parser: Any,
     request_delay: float = 1.0
 ) -> Dict[str, List[str]]:
-    """Process a single document with retry logic and rate limiting"""
-
     try:
         prompt = ChatPromptTemplate.from_template(
             template="""
@@ -49,8 +78,6 @@ def process_single_document(
         )
 
         chain = prompt | llm | output_parser
-        
-        # Add delay before making the API request
         time.sleep(request_delay)
         
         response = chain.invoke({
@@ -63,7 +90,6 @@ def process_single_document(
     except json.JSONDecodeError as e:
         print(f"Error parsing JSON response: {e}")
         raise
-
     except Exception as e:
         print(f"Error during document processing: {e}")
         raise
@@ -76,11 +102,9 @@ def process_documents(
     request_delay: float = 1.0,
     max_retries: int = 3
 ) -> Dict[str, List[str]]:
-    """
-    Process documents to extract roles and tasks with retry logic and rate limiting
-    """
     try:
-        # Initialize components
+        from src.services.llm_service import get_llm
+        
         llm = get_llm(model_name, temperature)
         output_parser = StrOutputParser()
         
@@ -88,7 +112,6 @@ def process_documents(
         loaded_docs = load_documents(document_paths)
         print(f"Loaded {len(loaded_docs)} documents successfully.")
         
-        # Process each document and combine results
         roles_tasks_summary = {}
         failed_docs = []
         
@@ -104,7 +127,6 @@ def process_documents(
                 )
                 
                 print(f"Successfully processed document {i}")
-                # Update summary with new results
                 for role, tasks in doc_results.items():
                     if role not in roles_tasks_summary:
                         roles_tasks_summary[role] = set()
@@ -115,19 +137,16 @@ def process_documents(
                 failed_docs.append(doc)
                 continue
         
-        # Report any failed documents
         if failed_docs:
             print(f"\nFailed to process {len(failed_docs)} documents:")
             for doc in failed_docs:
                 print(f"- Document: {getattr(doc, 'metadata', {}).get('source', 'Unknown source')}")
         
-        # Convert sets back to lists for JSON serialization
         result = {
             role: list(tasks) 
             for role, tasks in roles_tasks_summary.items()
         }
         
-        # Add processing summary
         result['_processing_summary'] = {
             'total_documents': len(loaded_docs),
             'successful_documents': len(loaded_docs) - len(failed_docs),
@@ -158,93 +177,3 @@ def process_documents(
                 }
             }
         }
-
-def example():
-    """
-    {
-  "Software Developer": [
-    "Actual coding",
-    "Implement functional cohesion",
-    "Construct dynamic model diagram, comprising of state transition diagrams",
-    "attempt to quantify software projects by using the size of the project to normalize other quality measures",
-    "implement and integrate the services to the final prototype",
-    .
-    .
-    .
-  ],
-  "UX Designer": [
-    "understand customer requirements",
-    "understand user specific requirements",
-    "create prototypes to get user feedback",
-    "give the exact look and feel of the software",
-    "System Design",
-    "design a software prototype",
-    "Planning and organizing the project",
-    .
-    .
-    .
-  ],
-  "Project Manager": [
-    "Use design review for verification and validation",
-    "Detect defects caused by overlooking some conditions",
-    "Revise and enhance the Prototype",
-    "Generate a System Architecture Document",
-    "Deployment of system",
-    "Check if all requirements are finalized",
-    "Maintenance",
-    "identify technological or business bottlenecks or challenges early",
-    "Requirement Gathering and analysis",
-    "Planning and organizing the project",
-    "estimation",
-    "Implementation",
-    "Tracking and running the project",
-    "plan integration as a big-bang at the very end",
-    "control",
-    "Apply software estimation techniques",
-    "management control of software project",
-    "Integration and Testing",
-    "manage project complexity",
-    "maintenance",
-    "prediction of task duration",
-    .
-    .
-    .
-  ],
-  "_processing_summary": {
-    "total_documents": 27,
-    "successful_documents": 27,
-    "failed_documents": 0,
-    "settings": {
-      "model": "llama-3.1-70b-versatile",
-      "temperature": 0.3,
-      "request_delay": 1.0,
-      "max_retries": 3
-    }
-  }
-}
-    """
-    # Example usage
-    document_paths = [
-        r"D:\Mindforge\AIService\test_doc\doc1.pdf"
-    ]
-    
-    current_roles = [
-        "Software Developer",
-        "UX Designer",
-        "Project Manager"
-    ]
-    
-    # Process documents
-    print("Starting document processing...")
-    results = process_documents(
-        document_paths=document_paths,
-        current_roles=current_roles,
-        request_delay=1.0  # 1 second delay between requests
-    )
-    
-    # Print results
-    print("\nProcessing Results:")
-    print(json.dumps(results, indent=2))
-
-if __name__ == "__main__":
-    example()

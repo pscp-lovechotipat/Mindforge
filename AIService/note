@@ -1,0 +1,22 @@
+{
+  "team_members": {
+    "John Doe": {
+      "current_role": "Software Developer",
+      "skills": [
+        "Python",
+        "JavaScript",
+        "Docker"
+      ],
+      "experience": "5 years in web development"
+    },
+    "Jane Smith": {
+      "current_role": "UX Designer",
+      "skills": [
+        "UI/UX Design",
+        "Figma",
+        "User Research"
+      ],
+      "experience": "3 years in product design"
+    }
+  }
+}
