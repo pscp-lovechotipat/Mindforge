@@ -1,3 +1,9 @@
+'''
+ File Handling Utility Module is module handles file operations including saving and managing uploaded files.
+
+ Author: Nathapong
+'''
+
 import os
 import shutil
 import tempfile
@@ -5,6 +11,15 @@ from typing import List, Tuple
 from fastapi import UploadFile, HTTPException
 
 def save_upload_files(files: List[UploadFile]) -> Tuple[List[str], str]:
+    '''
+     Save uploaded files to a temporary directory.
+
+     find : files (List[UploadFile])
+        
+     Return : Tuple[List[str], str]
+        
+     Error : HTTPException
+    '''
     temp_dir = tempfile.mkdtemp()
     file_paths = []
     
@@ -31,6 +46,11 @@ def save_upload_files(files: List[UploadFile]) -> Tuple[List[str], str]:
     return file_paths, temp_dir
 
 def cleanup_temp_files(temp_dir: str) -> None:
+    '''
+     Clean up temporary files and directory.
+
+     find : temp_dir (str)
+    '''
     try:
         shutil.rmtree(temp_dir)
     except Exception as e:
