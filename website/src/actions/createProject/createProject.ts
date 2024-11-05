@@ -5,7 +5,7 @@ import aiService from "@/lib/aiService";
 import generateAiServiceId from "@/utils/generateAiServiceId";
 import getUser from "../auth/getUser";
 import prisma from "@/lib/prisma";
-import aiStatusToDbStatus from "@/utils/aiStatusToDBStatus";
+import aiStatusToDbStatus from "@/utils/aiStatusToDbStatus";
 import aiPriorityToDbPriority from "@/utils/aiPriorityToDbPriority";
 
 export default async function createProject({
