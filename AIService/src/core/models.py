@@ -1,5 +1,7 @@
 '''
  Core data models is module for contains all the data validation models used across the application.
+
+ Author: Kongpop Panchai
 '''
 
 from typing import Dict, List, Any, Optional
