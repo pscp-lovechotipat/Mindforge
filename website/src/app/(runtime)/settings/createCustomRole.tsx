@@ -67,7 +67,7 @@ export default function CreateCustomRole() {
                     </div>
                     <button
                         type="submit"
-                        className="flex gap-2 justify-center items-center bg-white text-myslate-900 px-4 py-2 w-full rounded-xl font-bold"
+                        className="flex gap-2 justify-center items-center bg-white text-myslate-900 px-4 py-2 w-full rounded-xl transition hover:scale-[0.975] active:scale-95"
                     >
                         {isLoading ? (
                             <LoaderCircle
@@ -77,7 +77,7 @@ export default function CreateCustomRole() {
                         ) : (
                             <Plus strokeWidth={3} />
                         )}
-                        <p className="text-lg">Create custom role</p>
+                        <p className="text-lg font-bold">Create custom role</p>
                     </button>
                 </form>
             )}

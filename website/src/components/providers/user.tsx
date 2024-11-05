@@ -1,7 +1,7 @@
 "use client";
 
-import { ReactNode, useEffect, useState } from "react";
-import { GetUserResult, userContext } from "@/contexts/user";
+import { ReactNode, useState } from "react";
+import userContext, { GetUserResult } from "@/contexts/user";
 
 export default function UserProvider({
     user: _user,

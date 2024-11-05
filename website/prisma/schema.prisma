@@ -14,19 +14,20 @@ datasource db {
 }
 
 model User {
-  id          Int         @id @default(autoincrement())
-  aiServiceId String      @unique
-  firstName   String      @db.VarChar(255)
-  lastName    String      @db.VarChar(255)
-  email       String      @unique @db.VarChar(255)
-  password    String      @db.VarChar(255)
-  profileUrl  String?     @db.LongText
-  createdAt   DateTime    @default(now())
-  updatedAt   DateTime    @updatedAt
+  id          Int       @id @default(autoincrement())
+  aiServiceId String    @unique
+  firstName   String    @db.VarChar(255)
+  lastName    String    @db.VarChar(255)
+  email       String    @unique @db.VarChar(255)
+  password    String    @db.VarChar(255)
+  experience  String?   @db.VarChar(255)
+  profileUrl  String?   @db.LongText
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
   roleId      Int?
-  role        Role?       @relation(fields: [roleId], references: [id], onUpdate: Cascade, onDelete: Cascade)
+  role        Role?     @relation(fields: [roleId], references: [id], onUpdate: Cascade, onDelete: Cascade)
   skils       Skill[]
-  workspaces  Workspace[]
+  projects    Project[]
   todos       Todo[]
 }
 
@@ -44,17 +45,21 @@ model Skill {
   users       User[]
 }
 
-model Workspace {
-  id              Int    @id @default(autoincrement())
-  aiServiceId     String @unique
-  name            String @db.VarChar(255)
-  description     String @db.VarChar(10000)
+model Project {
+  id              Int      @id @default(autoincrement())
+  aiServiceId     String   @unique
+  name            String   @db.VarChar(255)
+  description     String   @db.VarChar(10000)
   analyzeResponse Json?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  todos           Todo[]
   users           User[]
 }
 
 model Todo {
   id        Int      @id @default(autoincrement())
+  projectId Int
   userId    Int
   name      String   @db.VarChar(255)
   role      String   @db.VarChar(255)
@@ -63,5 +68,6 @@ model Todo {
   raw       Json?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+  project   Project  @relation(fields: [projectId], references: [id], onUpdate: Cascade, onDelete: Cascade)
   user      User     @relation(fields: [userId], references: [id], onUpdate: Cascade, onDelete: Cascade)
 }

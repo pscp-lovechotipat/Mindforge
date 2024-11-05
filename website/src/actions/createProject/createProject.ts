@@ -3,6 +3,10 @@
 import FormData from "form-data";
 import aiService from "@/lib/aiService";
 import generateAiServiceId from "@/utils/generateAiServiceId";
+import getUser from "../auth/getUser";
+import prisma from "@/lib/prisma";
+import aiStatusToDbStatus from "@/utils/aiStatusToDbStatus";
+import aiPriorityToDbPriority from "@/utils/aiPriorityToDbPriority";
 
 export default async function createProject({
     name,
@@ -15,71 +19,135 @@ export default async function createProject({
     files: { name: string; buffer: Buffer }[];
     userIds: number[];
 }) {
-    // console.log(name, description, files, userIds);
+    const user = await getUser();
+    if (!user) return;
 
-    // for (const f of files) {
-    //     const buffer = Buffer.from(f.buffer);
-    // }
-
-    const workspaceId = generateAiServiceId();
-
-    const form = new FormData();
-
-    form.append("workspace_id", "550e8400-e29b-41d4-a716-446655440000".replaceAll("-", ""));
-    form.append("team_details", JSON.stringify({
-        team_members: {
-            "John Doe": {
-                current_role: "Software Developer",
-                skills: [
-                    "Python",
-                    "JavaScript",
-                    "Docker",
-                    "FastAPI",
-                    "React",
-                    "Node.js",
-                    "MongoDB",
-                    "PostgreSQL",
-                ],
-                experience:
-                    "5 years in full-stack development with focus on scalable applications",
+    const users = await prisma.user.findMany({
+        where: {
+            id: {
+                in: [...userIds, user.id],
             },
-            "Jane Smith": {
-                current_role: "UX Designer",
-                skills: [
-                    "UI/UX Design",
-                    "Figma",
-                    "User Research",
-                    "Wireframing",
-                    "Prototyping",
-                    "Adobe XD",
-                    "User Testing",
-                    "Information Architecture",
-                ],
-                experience:
-                    "3 years in product design for enterprise applications",
+            experience: {
+                not: null,
             },
-            "Mike Johnson": {
-                current_role: "Project Manager",
-                skills: [
-                    "Agile",
-                    "Scrum",
-                    "Risk Management",
-                    "JIRA",
-                    "Confluence",
-                    "MS Project",
-                    "Stakeholder Management",
-                    "Budget Planning",
-                ],
-                experience:
-                    "7 years in IT project management with focus on agile methodologies",
+            roleId: {
+                not: null,
             },
         },
-    }));
-    for (const file of files) {
-        form.append("files", Buffer.from(file.buffer), file.name);
+        select: {
+            id: true,
+            aiServiceId: true,
+            experience: true,
+            role: {
+                select: {
+                    name: true,
+                },
+            },
+            skils: {
+                select: {
+                    name: true,
+                },
+            },
+        },
+    });
+
+    if (!users.length || users.some((u) => !u.skils.length)) {
+        return {
+            success: false,
+            message:
+                "Users is not enough for create the project (required experience/role/skils)",
+        };
     }
 
-    const res = await aiService.post("/analyze", form);
+    const workspaceId = generateAiServiceId();
+    const teamDetails: any = {
+        team_members: {},
+    };
 
-    console.log(res.data);
+    for (const user of users) {
+        teamDetails.team_members[user.aiServiceId] = {
+            current_role: user.role?.name,
+            skills: user.skils.map((s) => s.name),
+            experience: user.experience,
+        };
+    }
+
+    const formData = new FormData();
+    formData.append("workspace_id", workspaceId);
+    formData.append("team_details", JSON.stringify(teamDetails));
+    for (const file of files) {
+        formData.append("files", Buffer.from(file.buffer), file.name);
+    }
+
+    const analyze = await aiService
+        .post("/analyze", formData)
+        .then((r) => ({ success: true, data: r.data }))
+        .catch((e) => ({ success: false, data: e.response?.data }));
+
+    if (!analyze.success) {
+        return {
+            success: false,
+            message: `Analyze Failed${
+                analyze.data.message ? `, ${analyze.data.message}` : "."
+            }`,
+        };
+    }
+
+    const tasks = await aiService
+        .get(`/workspace/${workspaceId}/tasks`)
+        .then((r) => ({ success: true, data: r.data }))
+        .catch((e) => ({ success: false, data: e.response?.data }));
+
+    if (!tasks.success) {
+        return {
+            success: false,
+            message: `Get tasks Failed${
+                tasks.data.message ? `, ${tasks.data.message}` : "."
+            }`,
+        };
+    }
+
+    // Save to DB
+    const project = await prisma.project.create({
+        data: {
+            aiServiceId: workspaceId,
+            name,
+            description,
+            analyzeResponse: analyze.data,
+            users: {
+                connect: users.map((u) => ({ id: u.id })),
+            },
+        },
+    });
+
+    const tasksFormatted = [];
+
+    for (const [userAiServiceId, todos] of Object.entries(
+        tasks.data as Record<string, any[]>
+    )) {
+        const user = users.find((u) => u.aiServiceId === userAiServiceId);
+        if (!user) continue;
+        for (const todo of todos) {
+            tasksFormatted.push({
+                projectId: project.id,
+                userId: user.id,
+                name: todo.task,
+                role: todo.role,
+                status: aiStatusToDbStatus(todo.status),
+                priority: aiPriorityToDbPriority(todo.priority),
+                raw: todo,
+                createdAt: new Date(todo.created_at),
+            });
+        }
+    }
+
+    const todos = await prisma.todo.createMany({
+        data: tasksFormatted,
+    });
+
+    return {
+        success: true,
+        data: project,
+        message: `Created project!, Analyzed ${todos.count} todos.`,
+    };
 }

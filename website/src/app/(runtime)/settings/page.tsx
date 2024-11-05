@@ -9,18 +9,22 @@ import { getMySkills } from "@/actions/settings/getMySkills";
 import AddSkillCard from "./addSkillCard";
 import MySkillCard from "./mySkillCard";
 import CreateCustomSkill from "./createCustomSkill";
+import EditUserInfo from "./editUserInfo";
+import { getUserInfo } from "@/actions/settings/getUserInfo";
 
 export default async function SettingsPage() {
-    const [myRole, roles, mySkills] = await Promise.all([
+    const [myRole, roles, mySkills, userInfo] = await Promise.all([
         getMyRole(),
         getRoles(),
         getMySkills(),
+        getUserInfo(),
     ]);
     const skills = await getSkills({ idNotIn: mySkills.map((s) => s.id) });
     return (
         <div className="grid grid-cols-2 gap-6">
             <div className="border-2 rounded-2xl p-8">
-                <h1 className="text-5xl font-bold">Settings</h1>
+                <h1 className="text-5xl font-bold mb-6">Settings</h1>
+                <EditUserInfo userInfo={userInfo} />
             </div>
             <div className="flex flex-col gap-6">
                 <div className="border-2 rounded-2xl p-8">

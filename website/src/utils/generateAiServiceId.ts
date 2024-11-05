@@ -1,5 +1,5 @@
 const generateAiServiceId = (length = 16) => {
-    const characters = "abcdefghijklmnopqrstuvwxyz0123456789";
+    const characters = "abcdefghijklmnopqrstuvwxyz";
     const randomValues = new Uint8Array(length);
     crypto.getRandomValues(randomValues);
 

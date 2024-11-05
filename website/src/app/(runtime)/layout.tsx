@@ -2,7 +2,7 @@
 
 import SideBar from "@/components/Navigation/Sidebar";
 import { Input } from "@/components/ui/input";
-import { userContext } from "@/contexts/user";
+import userContext from "@/contexts/user";
 import { Bell, CalendarDays, ChevronDown, Search } from "lucide-react";
 import { useContext } from "react";
 
