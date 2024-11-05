@@ -1,11 +1,12 @@
+import getMyProjects from "@/actions/project/getMyProjects";
 import ProjectCard from "@/components/Cards/ProjectCard";
 import {
     CreateProjectButton,
     CreateProjectCard,
 } from "@/components/Dialogs/CreateProject";
-import { Plus } from "lucide-react";
 
-export default function HomePage() {
+export default async function HomePage() {
+    const projects = await getMyProjects();
     return (
         <>
             {/* <h1>This is home page</h1> */}
@@ -48,8 +49,10 @@ export default function HomePage() {
                     <h1 className="text-5xl font-bold">Recents</h1>
                     <CreateProjectButton className="px-4" />
                 </div>
-                <div className="flex">
-                    <ProjectCard />
+                <div className="flex flex-wrap gap-4">
+                    {projects.map((project, idx) => (
+                        <ProjectCard key={idx} project={project} />
+                    ))}
                 </div>
             </div>
         </>

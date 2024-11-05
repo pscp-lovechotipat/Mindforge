@@ -9,8 +9,11 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import ProjectActiveLink from "./ActiveLink";
+import { useContext } from "react";
+import projectContext from "@/contexts/project";
 
 export default function ProjectSideBar() {
+
     return (
         <div className="min-w-[180px] px-4 pt-8 pb-12 flex flex-col items-center justify-between">
             {/* <h1 className="text-4xl mb-8">MF</h1> */}

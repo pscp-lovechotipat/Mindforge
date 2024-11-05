@@ -21,10 +21,11 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { userContext } from "@/contexts/user";
+import userContext from "@/contexts/user";
 import formatFileSize from "@/utils/formatFileSize";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { File, LoaderCircle, Plus, Search, X } from "lucide-react";
+import { useRouter } from "next/navigation";
 import {
     ChangeEvent,
     MouseEvent,
@@ -71,7 +72,7 @@ export function CreateProjectCard() {
                     <Plus size={60} />
                 </div>
                 <h1 className="text-lg font-bold">Blank Project</h1>
-                <p>Date : --/--/--</p>
+                <p className="text-sm">Date : --/--/--</p>
             </DialogTrigger>
             <CreateProjectDialogContent />
         </Dialog>
@@ -91,6 +92,8 @@ function CreateProjectDialogContent() {
         resolver: zodResolver(formSchema),
     });
 
+    const router = useRouter();
+
     async function onSubmit(values: z.infer<typeof formSchema>) {
         const filesFormatted = [];
         for (const file of files) {
@@ -107,9 +110,11 @@ function CreateProjectDialogContent() {
             userIds: users.map((u) => u.id),
         });
         setLoading(false);
-        if (!result?.success) {
+        if (!result?.success || !result.data) {
             return toast.error(result?.message ?? "Server Error, Please try again later.");
         }
+        router.push(`/projects/${result.data.id}`);
+        toast.success(result.message);
     }
 
     const handleUploadFileClick = (event: MouseEvent<HTMLButtonElement>) => {

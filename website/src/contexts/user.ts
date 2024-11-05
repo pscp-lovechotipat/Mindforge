@@ -4,6 +4,8 @@ import { createContext } from "react";
 
 export type GetUserResult = Awaited<ReturnType<typeof getUser>>;
 
-export const userContext = createContext<UseStateType<GetUserResult>>([
+const userContext = createContext<UseStateType<GetUserResult>>([
     null,
 ] as any);
+
+export default userContext;

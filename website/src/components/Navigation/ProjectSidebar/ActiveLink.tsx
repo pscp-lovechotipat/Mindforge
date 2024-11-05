@@ -1,7 +1,9 @@
 "use client";
 
+import projectContext from "@/contexts/project";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useContext } from "react";
 
 export default function ProjectActiveLink({
     href,
@@ -10,8 +12,9 @@ export default function ProjectActiveLink({
     href: string;
     children: React.ReactNode;
 }) {
+    const project = useContext(projectContext);
     const pathname = usePathname();
-    const fullPath = `/projects/${1}${href}`;
+    const fullPath = `/projects/${project.id}${href}`;
     const isActive = pathname === fullPath;
     return (
         <Link

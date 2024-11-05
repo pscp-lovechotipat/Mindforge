@@ -5,6 +5,8 @@ import aiService from "@/lib/aiService";
 import generateAiServiceId from "@/utils/generateAiServiceId";
 import getUser from "../auth/getUser";
 import prisma from "@/lib/prisma";
+import aiStatusToDbStatus from "@/utils/aiStatusToDBStatus";
+import aiPriorityToDbPriority from "@/utils/aiPriorityToDbPriority";
 
 export default async function createProject({
     name,
@@ -33,6 +35,7 @@ export default async function createProject({
             },
         },
         select: {
+            id: true,
             aiServiceId: true,
             experience: true,
             role: {
@@ -47,8 +50,6 @@ export default async function createProject({
             },
         },
     });
-
-    console.log(users);
 
     if (!users.length || users.some((u) => !u.skils.length)) {
         return {
@@ -78,74 +79,75 @@ export default async function createProject({
         formData.append("files", Buffer.from(file.buffer), file.name);
     }
 
-    const res = await aiService.post("/analyze", formData);
-    console.log(res.data);
+    const analyze = await aiService
+        .post("/analyze", formData)
+        .then((r) => ({ success: true, data: r.data }))
+        .catch((e) => ({ success: false, data: e.response?.data }));
 
-    // console.log(name, description, files, userIds);
+    if (!analyze.success) {
+        return {
+            success: false,
+            message: `Analyze Failed${
+                analyze.data.message ? `, ${analyze.data.message}` : "."
+            }`,
+        };
+    }
 
-    // for (const f of files) {
-    //     const buffer = Buffer.from(f.buffer);
-    // }
+    const tasks = await aiService
+        .get(`/workspace/${workspaceId}/tasks`)
+        .then((r) => ({ success: true, data: r.data }))
+        .catch((e) => ({ success: false, data: e.response?.data }));
 
-    // const workspaceId = generateAiServiceId();
+    if (!tasks.success) {
+        return {
+            success: false,
+            message: `Get tasks Failed${
+                tasks.data.message ? `, ${tasks.data.message}` : "."
+            }`,
+        };
+    }
 
-    // const form = new FormData();
+    // Save to DB
+    const project = await prisma.project.create({
+        data: {
+            aiServiceId: workspaceId,
+            name,
+            description,
+            analyzeResponse: analyze.data,
+            users: {
+                connect: users.map((u) => ({ id: u.id })),
+            },
+        },
+    });
 
-    // form.append("workspace_id", "550e8400-e29b-41d4-a716-446655440000".replaceAll("-", ""));
-    // form.append("team_details", JSON.stringify({
-    //     team_members: {
-    //         "John Doe": {
-    //             current_role: "Software Developer",
-    //             skills: [
-    //                 "Python",
-    //                 "JavaScript",
-    //                 "Docker",
-    //                 "FastAPI",
-    //                 "React",
-    //                 "Node.js",
-    //                 "MongoDB",
-    //                 "PostgreSQL",
-    //             ],
-    //             experience:
-    //                 "5 years in full-stack development with focus on scalable applications",
-    //         },
-    //         "Jane Smith": {
-    //             current_role: "UX Designer",
-    //             skills: [
-    //                 "UI/UX Design",
-    //                 "Figma",
-    //                 "User Research",
-    //                 "Wireframing",
-    //                 "Prototyping",
-    //                 "Adobe XD",
-    //                 "User Testing",
-    //                 "Information Architecture",
-    //             ],
-    //             experience:
-    //                 "3 years in product design for enterprise applications",
-    //         },
-    //         "Mike Johnson": {
-    //             current_role: "Project Manager",
-    //             skills: [
-    //                 "Agile",
-    //                 "Scrum",
-    //                 "Risk Management",
-    //                 "JIRA",
-    //                 "Confluence",
-    //                 "MS Project",
-    //                 "Stakeholder Management",
-    //                 "Budget Planning",
-    //             ],
-    //             experience:
-    //                 "7 years in IT project management with focus on agile methodologies",
-    //         },
-    //     },
-    // }));
-    // for (const file of files) {
-    //     form.append("files", Buffer.from(file.buffer), file.name);
-    // }
+    const tasksFormatted = [];
 
-    // const res = await aiService.post("/analyze", form);
+    for (const [userAiServiceId, todos] of Object.entries(
+        tasks.data as Record<string, any[]>
+    )) {
+        const user = users.find((u) => u.aiServiceId === userAiServiceId);
+        if (!user) continue;
+        for (const todo of todos) {
+            tasksFormatted.push({
+                projectId: project.id,
+                userId: user.id,
+                name: todo.task,
+                role: todo.role,
+                status: aiStatusToDbStatus(todo.status),
+                priority: aiPriorityToDbPriority(todo.priority),
+                raw: todo,
+                createdAt: new Date(todo.created_at),
+            });
+        }
+    }
 
-    // console.log(res.data);
+    const todos = await prisma.todo.createMany({
+        data: tasksFormatted,
+    });
+
+    return {
+        success: true,
+        data: project,
+        message: `Created project!, Analyzed ${todos.count} todos.`,
+    };
 }
