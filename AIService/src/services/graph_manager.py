@@ -1,3 +1,9 @@
+'''
+ Graph Database Management Service Module is handles all Neo4j graph database operations.
+
+ Author: Tanapat Chamted
+'''
+
 from neo4j import GraphDatabase, Result
 from typing import Dict, Any, Optional, List, Union
 import re
@@ -6,18 +12,40 @@ import json
 from datetime import datetime
 
 class Neo4jManager:
-    
+    '''
+     Manager class for Neo4j database operations
+    '''
     def __init__(self, uri: str, user: str, password: str):
+        '''
+         Initialize Neo4j connection.
+
+         find :
+            uri (str)
+            user (str)
+            password (str)
+        '''
         self.uri = uri
         self.user = user
         self.password = password
         self.driver = GraphDatabase.driver(uri, auth=(user, password))
 
     def close(self):
+        '''
+         Close the database connection.
+        '''
         if self.driver:
             self.driver.close()
 
     def init_database(self, db_name: str) -> str:
+        '''
+         Initialize database with retry mechanism.
+
+         find : db_name (str)
+            
+         Return : str
+            
+         Error : Exception
+        '''
         safe_db_name = re.sub(r'[^a-zA-Z0-9]', '', db_name)
         max_retries = 5
         retry_delay = 2
@@ -57,6 +85,18 @@ class Neo4jManager:
             raise
 
     def execute_with_retry(self, db_name: str, query: str, parameters: Dict = None) -> Dict[str, Any]:
+        '''
+         Execute query with retry mechanism.
+
+         find :
+            db_name (str)
+            query (str)
+            parameters (Dict)
+            
+         Return : Dict[str, Any]
+            
+         Error : Exception
+        '''
         max_retries = 3
         retry_delay = 1
         last_error = None
@@ -85,14 +125,44 @@ class Neo4jManager:
                 time.sleep(retry_delay)
 
 def create_neo4j_manager(uri: str, user: str, password: str) -> Neo4jManager:
+    '''
+     Create and return Neo4j manager instance.
+
+     find :
+        uri (str)
+        user (str)
+        password (str)
+        
+     Return : Neo4jManager
+    '''
     return Neo4jManager(uri, user, password)
 
 def serialize_property_value(value: Any) -> Any:
+    '''
+     Serialize property value if needed.
+
+     find : value
+        
+     Return : Serialized value
+    '''
     if isinstance(value, (dict, list)):
         return json.dumps(value)
     return value
 
 def create_node(manager: Neo4jManager, db_name: str, label: str, properties: Dict[str, Any]) -> Dict[str, Any]:
+    '''
+     Create a node in the graph database.
+
+     find :
+        manager (Neo4jManager)
+        db_name (str)
+        label (str)
+        properties (Dict[str, Any])
+        
+     Return : Dict[str, Any]
+        
+     Error : Exception
+    '''
     if 'created_at' not in properties:
         properties['created_at'] = datetime.now().isoformat()
 
@@ -132,6 +202,23 @@ def create_relationship(
     rel_type: str,
     rel_properties: Optional[Dict[str, Any]] = None
 ) -> Dict[str, Any]:
+    '''
+     Create a relationship between nodes.
+
+     find :
+        manager (Neo4jManager)
+        db_name (str)
+        label1 (str)
+        name1 (str)
+        label2 (str)
+        name2 (str)
+        rel_type (str)
+        rel_properties (Optional[Dict[str, Any]])
+        
+     Return : Dict[str, Any]
+        
+     Error : Exception
+    '''
     props = rel_properties or {}
     if 'created_at' not in props:
         props['created_at'] = datetime.now().isoformat()
@@ -178,6 +265,16 @@ def create_relationship(
         raise
 
 def get_node_by_id(manager: Neo4jManager, db_name: str, node_id: int) -> Optional[Dict[str, Any]]:
+    '''
+     Retrieve a node by its ID.
+
+     find :
+        manager (Neo4jManager)
+        db_name (str)
+        node_id (int)
+        
+     Return : Optional[Dict[str, Any]]
+    '''
     query = """
     MATCH (n)
     WHERE ID(n) = $node_id
@@ -191,6 +288,16 @@ def get_node_by_id(manager: Neo4jManager, db_name: str, node_id: int) -> Optiona
     return None
 
 def get_workspace_tasks(manager: Neo4jManager, db_name: str, workspace_id: str) -> Dict[str, List[Dict[str, Any]]]:
+    '''
+     Get workspace tasks.
+
+     find :
+        manager (Neo4jManager)
+        db_name (str)
+        workspace_id (str)
+        
+     Return : Dict[str, List[Dict[str, Any]]]
+    '''
     query = """
     MATCH (w:Workspace {name: $workspace})-[:CONTAINS_ROLE]->(r)-[:HAS_TASK]->(t)
     MATCH (p:Person)-[:CAN_PERFORM]->(r)
@@ -214,6 +321,17 @@ def get_workspace_tasks(manager: Neo4jManager, db_name: str, workspace_id: str) 
     return tasks_by_person
 
 def update_node_by_id(manager: Neo4jManager, db_name: str, node_id: int, new_properties: Dict[str, Any]) -> bool:
+    '''
+     Update node properties.
+
+     find :
+        manager (Neo4jManager): Database manager
+        db_name (str): Database name
+        node_id (int): Node ID
+        new_properties (Dict[str, Any]): New properties to set
+        
+     Return : bool
+    '''
     new_properties['updated_at'] = datetime.now().isoformat()
     
     # Process properties to handle complex types
@@ -237,6 +355,16 @@ def update_node_by_id(manager: Neo4jManager, db_name: str, node_id: int, new_pro
     return bool(result['data'])
 
 def delete_node_by_id(manager: Neo4jManager, db_name: str, node_id: int) -> bool:
+    '''
+     Delete a node and its relationships from the database.
+
+     find :
+        manager (Neo4jManager)
+        db_name (str)
+        node_id (int)
+        
+     Return : bool
+    '''
     # Check if node exists
     check_query = """
     MATCH (n) 
@@ -259,6 +387,16 @@ def delete_node_by_id(manager: Neo4jManager, db_name: str, node_id: int) -> bool
     return True
 
 def get_graph_statistics(manager: Neo4jManager, db_name: str, workspace_id: str) -> Dict[str, Any]:
+    '''
+     Get graph statistics.
+
+     find :
+        manager (Neo4jManager)
+        db_name (str)
+        workspace_id (str)
+        
+     Return : Dict[str, Any]
+    '''
     query = """
     MATCH (w:Workspace {name: $workspace})
     OPTIONAL MATCH (w)-[:CONTAINS_ROLE]->(r)
@@ -296,6 +434,18 @@ def add_task_to_role(
     task_name: str,
     task_properties: Dict[str, Any] = None
 ) -> Dict[str, Any]:
+    '''
+     Add a new task to an existing role.
+
+     find :
+        manager (Neo4jManager)
+        db_name (str)
+        role_name (str)
+        task_name (str)
+        task_properties (Dict[str, Any], optional)
+        
+     Return : Dict[str, Any]
+    '''
     # Prepare task properties
     base_properties = {
         "name": task_name,
@@ -329,6 +479,17 @@ def assign_task(
     task_id: int,
     assignee_name: str
 ) -> bool:
+    '''
+     Assign a task to a person.
+
+     find :
+        manager (Neo4jManager)
+        db_name (str)
+        task_id (int)
+        assignee_name (str)
+        
+     Return : bool
+    '''
     # Delete existing assignment if any
     query_delete = """
     MATCH (t)-[r:ASSIGNED_TO]->()
@@ -364,6 +525,15 @@ def get_task_assignments(
     manager: Neo4jManager,
     db_name: str
 ) -> Dict[str, List[Dict[str, Any]]]:
+    '''
+     Get all task assignments grouped by person.
+
+     find :
+        manager (Neo4jManager)
+        db_name (str)
+        
+     Return : Dict[str, List[Dict[str, Any]]]
+    '''
     query = """
     MATCH (p:Person)<-[a:ASSIGNED_TO]-(t:Task)
     RETURN p.name as person,
