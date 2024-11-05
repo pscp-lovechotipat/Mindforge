@@ -1,3 +1,9 @@
+'''
+ Document Processing Service Module is handles document loading, splitting, and processing operations.
+
+ Author: Kongpop Panchai
+'''
+
 from typing import List, Dict, Any
 from langchain_community.document_loaders import PyPDFLoader, TextLoader, UnstructuredMarkdownLoader
 from langchain.text_splitter import RecursiveCharacterTextSplitter
@@ -8,6 +14,13 @@ import time
 from tenacity import retry, stop_after_attempt, wait_exponential
 
 def load_documents(file_paths: List[str]) -> List[Any]:
+    '''
+     Load documents from various file formats.
+
+     find : file_paths (List[str])
+        
+     Return : List[Any]
+    '''
     print("Loading documents...")
     documents = []
     
@@ -30,6 +43,16 @@ def split_documents(
     chunk_size_split: int = 10000, 
     chunk_overlap_split: int = 1000
 ) -> List[Any]:
+    '''
+     Split documents into smaller chunks.
+
+     find :
+        documents (List[Any])
+        chunk_size_split (int)
+        chunk_overlap_split (int)
+        
+     Return : List[Any]
+    '''
     print("Splitting documents into chunks...")
     text_splitter = RecursiveCharacterTextSplitter(
         chunk_size=chunk_size_split, 
@@ -51,6 +74,19 @@ def process_single_document(
     output_parser: Any,
     request_delay: float = 1.0
 ) -> Dict[str, List[str]]:
+    '''
+     Process a single document to extract roles and tasks.
+
+     find :
+        doc_content (str)
+        current_roles (List[str])
+        llm (Any)
+        output_parser (Any)
+        request_delay (float)
+        
+     Return :
+        Dict[str, List[str]]
+    '''
     try:
         prompt = ChatPromptTemplate.from_template(
             template="""
@@ -102,6 +138,19 @@ def process_documents(
     request_delay: float = 1.0,
     max_retries: int = 3
 ) -> Dict[str, List[str]]:
+    '''
+     Process multiple documents to extract roles and tasks.
+
+     find :
+        document_paths (List[str])
+        current_roles (List[str])
+        model_name (str)
+        temperature (float)
+        request_delay (float)
+        max_retries (int)
+        
+     Return : Dict[str, List[str]]
+    '''
     try:
         from src.services.llm_service import get_llm
         
