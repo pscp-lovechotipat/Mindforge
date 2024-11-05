@@ -1,9 +1,7 @@
 """
-Configuration Module.
-This module handles environment variables and configuration settings.
+Configuration Module is handles environment variables and configuration settings.
 
-Author: [Your Name]
-Date: [Current Date]
+Author: Kongpop
 """
 
 import os
@@ -22,7 +20,7 @@ GROQ_API_KEY = os.getenv("GROQ_API_KEY")
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 HUGGINGFACE_TOKEN = os.getenv("HUGGINGFACE_TOKEN")
 
-# Validate required environment variables
+# Validate required
 required_vars = [
     "NEO4J_URI",
     "NEO4J_USERNAME",
