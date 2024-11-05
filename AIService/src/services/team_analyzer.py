@@ -1,3 +1,9 @@
+'''
+ Team Analysis Service Module is module handles team member analysis and role matching operations.
+
+ Author: Tanapon
+'''
+
 from typing import Dict, List, Any
 from langchain.prompts import ChatPromptTemplate
 from langchain_core.output_parsers.string import StrOutputParser
@@ -5,6 +11,13 @@ from langchain.schema.runnable import RunnablePassthrough
 import json
 
 def create_role_analysis_chain(llm: Any):
+    '''
+     Create a chain for analyzing team member roles.
+
+     find : llm (Any)
+        
+     Return : Chain
+    '''
     template = """
     You are an AI assistant specializing in human resource management and team organization.
     
@@ -32,6 +45,15 @@ def create_role_analysis_chain(llm: Any):
     return chain
 
 def parse_roles_response(response: str) -> List[str]:
+    '''
+     Parse the LLM response into a list of roles.
+
+     find : response (str)
+        
+     Return : List[str]
+        
+     Error : ValueError
+    '''
     cleaned_response = response.strip()
     roles = json.loads(cleaned_response)
     
@@ -41,6 +63,13 @@ def parse_roles_response(response: str) -> List[str]:
     return roles
 
 def validate_team_details(team_details: Dict[str, Any]) -> None:
+    '''
+     Validate the structure of team details input.
+
+     find : team_details (Dict[str, Any])
+        
+     Error : ValueError
+    '''
     required_fields = {'current_role', 'skills', 'experience'}
     
     if not team_details:
@@ -64,6 +93,16 @@ def analyze_team_roles(
     llm: Any,
     max_retries: int = 3
 ) -> Dict[str, List[str]]:
+    '''
+     Analyze possible roles for each team member.
+
+     find :
+        team_details (Dict[str, Any])
+        llm (Any)
+        max_retries (int)
+        
+     Return : Dict[str, List[str]]
+    '''
     chain = create_role_analysis_chain(llm)
     roles_by_member: Dict[str, List[str]] = {}
     
@@ -88,6 +127,16 @@ async def analyze_team_roles_async(
     llm: Any,
     max_retries: int = 3
 ) -> Dict[str, List[str]]:
+    '''
+     Asynchronous version of analyze_team_roles.
+
+     find :
+        team_details (Dict[str, Any])
+        llm (Any)
+        max_retries (int)
+        
+     Return : Dict[str, List[str]]
+    '''
     chain = create_role_analysis_chain(llm)
     roles_by_member: Dict[str, List[str]] = {}
     
