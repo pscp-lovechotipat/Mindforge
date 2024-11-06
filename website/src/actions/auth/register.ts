@@ -11,7 +11,9 @@ export default async function register({
     lastName,
     email,
     password,
-}: z.infer<typeof registerSchema>) {
+    roleId,
+    skillsId,
+}: z.infer<typeof registerSchema> & { roleId: number; skillsId: number[] }) {
     const duplicateEmail = await prisma.user.count({
         where: {
             email,
@@ -31,6 +33,10 @@ export default async function register({
             lastName,
             email,
             password: bcrypt.hashSync(password, 12),
+            roleId,
+            skils: {
+                connect: skillsId.map((id) => ({ id })),
+            },
         },
     });
 

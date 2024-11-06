@@ -32,22 +32,22 @@ export default function RuntimeLayout({
                         />
                     </div>
                     <div className="flex items-center gap-4">
-                        <button type="button">
+                        {/* <button type="button">
                             <Bell />
                         </button>
                         <button type="button">
                             <CalendarDays />
                         </button>
-                        <div className="w-[2px] h-[30px] bg-white rounded-full"></div>
+                        <div className="w-[2px] h-[30px] bg-white rounded-full"></div> */}
                         <button
                             type="button"
-                            className="flex items-center gap-3 p-1 hover:bg-myslate-800 rounded-full"
+                            className="h-[50px] flex items-center gap-3 py-1 px-4 hover:bg-myslate-800 rounded-full"
                         >
-                            <img
+                            {/* <img
                                 className="w-[50px] aspect-[1/1] bg-white/10 rounded-full"
                                 src="/mockup/nicenathapong_profile.jpg"
                                 alt="mockup"
-                            />
+                            /> */}
                             <h1 className="font-bold text-lg">{user.firstName} {user.lastName}</h1>
                             <ChevronDown />
                         </button>

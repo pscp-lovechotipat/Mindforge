@@ -6,9 +6,20 @@ import { X } from "lucide-react";
 import { MouseEvent } from "react";
 import toast from "react-hot-toast";
 
-export default function MySkillCard({ skill }: { skill: Skill }) {
+export default function MySkillCard({
+    skill,
+    onRemoveClick,
+}: {
+    skill: Skill;
+    onRemoveClick?: () => any;
+}) {
     const handleRemoveClick = async (event: MouseEvent<HTMLButtonElement>) => {
         event.preventDefault();
+
+        // Reuse component
+        if (onRemoveClick) {
+            return onRemoveClick();
+        }
         toast.promise(removeMySkill(skill.id), {
             loading: "Removing Skill...",
             success: "Removed Skill!",
@@ -16,9 +27,7 @@ export default function MySkillCard({ skill }: { skill: Skill }) {
         });
     };
     return (
-        <div
-            className="relative p-4 bg-myslate-800 rounded-xl border border-white/20 text-left"
-        >
+        <div className="relative p-4 bg-myslate-800 rounded-xl border border-white/20 text-left">
             <button
                 type="button"
                 className="absolute top-2 right-2 w-[25px] aspect-[1/1] flex justify-center items-center rounded-full bg-red-500 transition hover:scale-[0.975] active:scale-95"

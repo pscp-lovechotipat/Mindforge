@@ -2,12 +2,35 @@
 
 import prisma from "@/lib/prisma";
 
-export default async function loadUsersAutocomplete({ query, idNotIn }: { query: string, idNotIn: number[] }) {
+export default async function loadUsersAutocomplete({
+    query,
+    idNotIn,
+    notInProjectId,
+}: {
+    query: string;
+    idNotIn?: number[];
+    notInProjectId?: number;
+}) {
     return prisma.user.findMany({
         where: {
-            id: {
-                notIn: idNotIn
-            },
+            ...(idNotIn
+                ? {
+                      id: {
+                          notIn: idNotIn,
+                      },
+                  }
+                : {}),
+            ...(notInProjectId
+                ? {
+                      NOT: {
+                          projects: {
+                              some: {
+                                  id: notInProjectId,
+                              },
+                          },
+                      },
+                  }
+                : {}),
             email: {
                 contains: query,
             },

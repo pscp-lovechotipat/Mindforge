@@ -3,6 +3,7 @@
 import prisma from "@/lib/prisma";
 import bcrypt from "bcrypt";
 import { sign } from "jsonwebtoken";
+import { revalidatePath } from "next/cache";
 import { cookies } from "next/headers";
 
 export default async function login({
@@ -41,6 +42,7 @@ export default async function login({
         maxAge: 604800,
         path: "/",
     });
+    revalidatePath("/");
     return {
         success: true,
         message: "Logged in!",

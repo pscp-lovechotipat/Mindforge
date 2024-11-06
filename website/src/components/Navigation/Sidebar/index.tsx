@@ -23,9 +23,9 @@ export default function SideBar() {
                     <ActiveLink href="/">
                         <House size={40} />
                     </ActiveLink>
-                    <ActiveLink href="/files">
+                    {/* <ActiveLink href="/files">
                         <FolderClosed size={40} />
-                    </ActiveLink>
+                    </ActiveLink> */}
                     <ActiveLink href="/settings">
                         <Settings size={40} />
                     </ActiveLink>

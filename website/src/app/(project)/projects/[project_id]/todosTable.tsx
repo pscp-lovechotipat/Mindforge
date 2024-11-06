@@ -88,10 +88,10 @@ export default function TodosTable({ todos }: { todos: GetTodoResult }) {
 
     return (
         <>
-            <div className="flex justify-between items-center">
+            <div className="flex justify-between items-center mb-6">
                 <div>
-                    <p className="mb-2">Filters</p>
-                    <div className="flex gap-2 mb-6">
+                    {/* <p className="mb-2">Filters</p>
+                    <div className="flex gap-2">
                         <button
                             type="button"
                             className="px-6 py-2 border border-white/20 rounded-lg font-bold"
@@ -104,7 +104,7 @@ export default function TodosTable({ todos }: { todos: GetTodoResult }) {
                         >
                             Completed
                         </button>
-                    </div>
+                    </div> */}
                 </div>
 
                 <CreateTodoButton className="h-fit px-6" />

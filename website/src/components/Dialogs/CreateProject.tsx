@@ -264,7 +264,7 @@ function CreateProjectDialogContent() {
                                                         <File />
                                                     </div>
                                                     <div className="text-center">
-                                                        <h1 className="text-center font-bold">
+                                                        <h1 className="text-center font-bold truncate">
                                                             {file.name}
                                                         </h1>
                                                         <p className="text-white/40 text-xs">

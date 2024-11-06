@@ -16,8 +16,23 @@ export default async function getUsersInProject(projectId: number) {
             firstName: true,
             lastName: true,
             email: true,
+            experience: true,
+            role: {
+                select: {
+                    name: true
+                }
+            },
+            skils: {
+                select: {
+                    name: true
+                }
+            },
             createdAt: true,
             updatedAt: true,
         },
     });
 }
+
+export type GetUsersInProjectResult = Awaited<
+    ReturnType<typeof getUsersInProject>
+>;

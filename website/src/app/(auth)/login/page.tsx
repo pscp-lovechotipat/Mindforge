@@ -79,7 +79,7 @@ export default function LoginPage() {
                                         <FormControl>
                                             <Input
                                                 type="email"
-                                                className="bg-myslate-600 text-lg px-4 py-6 rounded-xl border-none"
+                                                className="bg-myslate-800 text-lg px-4 py-6 rounded-xl border-none"
                                                 {...field}
                                             />
                                         </FormControl>
@@ -104,7 +104,7 @@ export default function LoginPage() {
                                         <FormControl>
                                             <Input
                                                 type="password"
-                                                className="bg-myslate-600 text-lg px-4 py-6 rounded-xl border-none"
+                                                className="bg-myslate-800 text-lg px-4 py-6 rounded-xl border-none"
                                                 {...field}
                                             />
                                         </FormControl>

@@ -5,9 +5,12 @@ import { Skill } from "@prisma/client";
 import { MouseEvent } from "react";
 import toast from "react-hot-toast";
 
-export default function AddSkillCard({ skill }: { skill: Skill }) {
+export default function AddSkillCard({ skill, onClick }: { skill: Skill; onClick?: () => any; }) {
     const handleClick = async (event: MouseEvent<HTMLButtonElement>) => {
         event.preventDefault();
+        if (onClick) {
+            return onClick();
+        }
         toast.promise(addMySkill(skill.id), {
             loading: "Add skill...",
             success: "Added skill!",

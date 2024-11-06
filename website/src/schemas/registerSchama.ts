@@ -11,7 +11,7 @@ const registerSchema = z
         confirmPassword: z
             .string()
             .min(8, "The password must be at least 8 characters long"),
-        // experience: z.string().min(1).max(255),
+        experience: z.string().min(1).max(255),
     })
     .refine((d) => d.password === d.confirmPassword, {
         message: "Passwords don't match",
