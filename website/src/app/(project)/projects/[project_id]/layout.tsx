@@ -45,7 +45,7 @@ export default async function ProjectLayout({
                             <h1 className="font-bold text-lg">Cscosmo</h1>
                             <ChevronDown />
                         </button> */}
-                            <button
+                            {/* <button
                                 type="button"
                                 className="flex items-center gap-2"
                             >
@@ -82,7 +82,7 @@ export default async function ProjectLayout({
                                         <p className="text-sm">3</p>
                                     </div>
                                 </div>
-                            </button>
+                            </button> */}
                         </div>
                     </div>
                     {children}

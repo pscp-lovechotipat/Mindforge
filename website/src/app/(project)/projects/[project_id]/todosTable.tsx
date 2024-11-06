@@ -36,6 +36,7 @@ import setTodoPriority from "@/actions/project/setTodoPriority";
 import deleteTodo from "@/actions/project/deleteTodo";
 import toggleAllTodos from "@/actions/project/toggleAllTodos";
 import projectContext from "@/contexts/project";
+import { CreateTodoButton } from "@/components/Dialogs/CreateTodo";
 
 type GetTodoResult = Awaited<ReturnType<typeof getProjectTodos>>;
 
@@ -87,21 +88,28 @@ export default function TodosTable({ todos }: { todos: GetTodoResult }) {
 
     return (
         <>
-            <p className="mb-2">Filters</p>
-            <div className="flex gap-2 mb-6">
-                <button
-                    type="button"
-                    className="px-6 py-2 border border-white/20 rounded-lg font-bold"
-                >
-                    For Me
-                </button>
-                <button
-                    type="button"
-                    className="px-6 py-2 border border-white/20 rounded-lg font-bold"
-                >
-                    Completed
-                </button>
+            <div className="flex justify-between items-center">
+                <div>
+                    <p className="mb-2">Filters</p>
+                    <div className="flex gap-2 mb-6">
+                        <button
+                            type="button"
+                            className="px-6 py-2 border border-white/20 rounded-lg font-bold"
+                        >
+                            For Me
+                        </button>
+                        <button
+                            type="button"
+                            className="px-6 py-2 border border-white/20 rounded-lg font-bold"
+                        >
+                            Completed
+                        </button>
+                    </div>
+                </div>
+
+                <CreateTodoButton project={project} className="h-fit px-6" />
             </div>
+
             <div className="bg-myslate-900 border-2 rounded-2xl overflow-hidden max-w-[calc(100vw-220px)]">
                 <Table className="text-lg overflow-x-auto whitespace-nowrap">
                     {/* <TableCaption>A list of your recent todos.</TableCaption> */}

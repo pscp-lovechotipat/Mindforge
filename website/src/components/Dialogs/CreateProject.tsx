@@ -95,6 +95,7 @@ function CreateProjectDialogContent() {
     const router = useRouter();
 
     async function onSubmit(values: z.infer<typeof formSchema>) {
+        if (isLoading) return;
         const filesFormatted = [];
         for (const file of files) {
             filesFormatted.push({
