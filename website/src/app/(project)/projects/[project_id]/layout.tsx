@@ -24,7 +24,11 @@ export default async function ProjectLayout({
                 <ProjectSideBar />
                 <div className="w-full pt-8 pr-6">
                     <div className="flex justify-between items-center mb-6">
-                        <h1 className="text-5xl font-bold">{project.name}</h1>
+                       
+                        <div className="max-w-[600px]">
+                             <h1 className="text-5xl font-bold mb-1">{project.name}</h1>
+                             <p className="text-lg text-white/40 truncate">{project.description}</p>
+                        </div>
                         <div className="flex items-center gap-8">
                             {/* <button type="button">
                             <Bell />

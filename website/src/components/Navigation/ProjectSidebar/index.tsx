@@ -4,6 +4,7 @@ import {
     House,
     ListTodo,
     LogOut,
+    Settings,
     User,
     Users,
 } from "lucide-react";
@@ -30,14 +31,17 @@ export default function ProjectSideBar() {
                     <ProjectActiveLink href="">
                         <ListTodo size={40} />
                     </ProjectActiveLink>
-                    <ProjectActiveLink href="/teams">
+                    <ProjectActiveLink href="/members">
                         <Users size={40} />
                     </ProjectActiveLink>
-                    <ProjectActiveLink href="/calendar">
+                    {/* <ProjectActiveLink href="/calendar">
                         <CalendarDays size={40} />
                     </ProjectActiveLink>
                     <ProjectActiveLink href="/upload">
                         <FileUp size={40} />
+                    </ProjectActiveLink> */}
+                    <ProjectActiveLink href="/settings">
+                        <Settings size={40} />
                     </ProjectActiveLink>
                 </div>
             </div>

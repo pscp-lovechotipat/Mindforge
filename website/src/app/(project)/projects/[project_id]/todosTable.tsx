@@ -107,10 +107,10 @@ export default function TodosTable({ todos }: { todos: GetTodoResult }) {
                     </div>
                 </div>
 
-                <CreateTodoButton project={project} className="h-fit px-6" />
+                <CreateTodoButton className="h-fit px-6" />
             </div>
 
-            <div className="bg-myslate-900 border-2 rounded-2xl overflow-hidden max-w-[calc(100vw-220px)]">
+            <div className="bg-myslate-900 border-2 rounded-2xl overflow-hidden max-w-[calc(100vw-205px)]">
                 <Table className="text-lg overflow-x-auto whitespace-nowrap">
                     {/* <TableCaption>A list of your recent todos.</TableCaption> */}
                     <TableHeader>

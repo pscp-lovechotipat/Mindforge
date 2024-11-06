@@ -45,6 +45,7 @@ import {
 import getRoles from "@/actions/settings/getRoles";
 import getUsersInProject from "@/actions/project/getUsersInProject";
 import createTodo from "@/actions/project/createTodo";
+import projectContext from "@/contexts/project";
 
 const formSchema = z.object({
     name: z.string().min(1).max(255),
@@ -57,10 +58,8 @@ const formSchema = z.object({
 });
 
 export function CreateTodoButton({
-    project,
     className,
 }: {
-    project: Project;
     className?: string;
 }) {
     const [open, setOpen] = useState(false);
@@ -75,7 +74,6 @@ export function CreateTodoButton({
                 <h1 className="whitespace-nowrap">New Todo</h1>
             </DialogTrigger>
             <CreateTodoDialogContent
-                project={project}
                 onCompleted={() => setOpen(false)}
             />
         </Dialog>
@@ -83,12 +81,12 @@ export function CreateTodoButton({
 }
 
 function CreateTodoDialogContent({
-    project,
     onCompleted,
 }: {
-    project: Project;
     onCompleted: () => any;
 }) {
+    const project = useContext(projectContext);
+    
     const [user] = useContext(userContext);
     const [isLoading, setLoading] = useState(false);
     const [roles, setRoles] = useState<Role[]>([]);
