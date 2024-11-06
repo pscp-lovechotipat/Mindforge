@@ -1,9 +1,7 @@
 """
-Main FastAPI Application Module.
-This is the main entry point for the FastAPI application.
+Main FastAPI Application Module is the main entry point for the FastAPI application.
 
-Author: [Your Name]
-Date: [Current Date]
+Author: Tanapat Chamted
 """
 
 from fastapi import FastAPI, File, UploadFile, HTTPException, Form

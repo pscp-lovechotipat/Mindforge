@@ -1,3 +1,9 @@
+'''
+ Comprehensive API Testing is tests all function.
+
+ Author: Tanapat Chamted
+'''
+
 import unittest
 import requests
 import json
@@ -8,9 +14,11 @@ from typing import Dict, Any, List
 from datetime import datetime
 
 class TeamAnalysisAPITest(unittest.TestCase):
+    """Test Team Analysis API"""
     
     @classmethod
     def setUpClass(cls):
+        """Set up test"""
         cls.base_url = "http://localhost:8000"
         cls.workspace_id = f"test{str(uuid.uuid4())[:8]}"
         cls.test_files = cls.create_test_files()
@@ -37,6 +45,7 @@ class TeamAnalysisAPITest(unittest.TestCase):
 
     @classmethod
     def create_test_files(cls) -> List[str]:
+        """Create test document files"""
         os.makedirs("tests/test_data", exist_ok=True)
         
         files = {
@@ -102,6 +111,7 @@ Phase 3: Deployment
         return file_paths
 
     def test_01_health_check(self):
+        """Test API health check endpoint"""
         print("\nTesting health check...")
         response = requests.get(f"{self.base_url}/health")
         
@@ -113,6 +123,7 @@ Phase 3: Deployment
         print("Health check response:", json.dumps(data, indent=2))
 
     def test_02_workspace_analysis(self):
+        """Test workspace analysis"""
         print("\nTesting workspace analysis...")
         
         # Prepare files and data
@@ -142,6 +153,7 @@ Phase 3: Deployment
         time.sleep(5)
 
     def test_03_get_graph(self):
+        """Test graph visualization endpoint"""
         print("\nTesting graph retrieval...")
         response = requests.get(f"{self.base_url}/workspace/{self.workspace_id}/graph")
         
@@ -160,6 +172,7 @@ Phase 3: Deployment
         self.__class__.test_nodes = data["nodes"]
 
     def test_04_task_creation(self):
+        """Test task creation"""
         print("\nTesting task creation...")
         
         # First, get available roles from the workspace
@@ -263,6 +276,7 @@ Phase 3: Deployment
         print(json.dumps(current_tasks, indent=2))
 
     def test_05_task_assignment(self):
+        """Test assigning tasks"""
         print("\nTesting task assignment...")
         
         if not hasattr(self, 'test_tasks'):
@@ -286,6 +300,7 @@ Phase 3: Deployment
             print(f"Assigned task {task['id']} to {assignee}")
 
     def test_07_update_task(self):
+        """Test updating task details"""
         print("\nTesting task updates...")
         
         if not hasattr(self, 'test_tasks'):
@@ -310,6 +325,7 @@ Phase 3: Deployment
                 break
 
     def test_08_task_deletion(self):
+        """Test deleting tasks"""
         print("\nTesting task deletion...")
         
         if not hasattr(self, 'test_tasks'):
@@ -353,6 +369,7 @@ Phase 3: Deployment
             self.skipTest("No suitable tasks for deletion test")
 
     def test_09_statistics(self):
+        """Test workspace statistics endpoint"""
         print("\nTesting workspace statistics...")
         response = requests.get(f"{self.base_url}/workspace/{self.workspace_id}/statistics")
         
@@ -367,6 +384,7 @@ Phase 3: Deployment
 
     @classmethod
     def tearDownClass(cls):
+        """Clean up test"""
         print("\nCleaning up test files...")
         for file_path in cls.test_files:
             try:
@@ -380,6 +398,7 @@ Phase 3: Deployment
             print(f"Error removing test_data directory: {e}")
 
 def main():
+    """Run tests with detailed output"""
     suite = unittest.TestLoader().loadTestsFromTestCase(TeamAnalysisAPITest)
     runner = unittest.TextTestRunner(verbosity=2)
     runner.run(suite)
