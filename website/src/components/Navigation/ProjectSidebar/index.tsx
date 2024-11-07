@@ -4,6 +4,7 @@ import {
     House,
     ListTodo,
     LogOut,
+    Network,
     Settings,
     User,
     Users,
@@ -33,6 +34,9 @@ export default function ProjectSideBar() {
                     </ProjectActiveLink>
                     <ProjectActiveLink href="/members">
                         <Users size={40} />
+                    </ProjectActiveLink>
+                    <ProjectActiveLink href="/tree">
+                        <Network size={40} />
                     </ProjectActiveLink>
                     {/* <ProjectActiveLink href="/calendar">
                         <CalendarDays size={40} />
