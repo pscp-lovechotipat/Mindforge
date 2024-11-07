@@ -115,7 +115,7 @@ export default async function createProject({
             description,
             analyzeResponse: analyze.data,
             users: {
-                connect: users.map((u) => ({ id: u.id })),
+                connect: [{ id: user.id }, ...users.map((u) => ({ id: u.id }))],
             },
         },
     });
