@@ -1,8 +1,6 @@
 "use client";
 
 import { useContext, useEffect, useRef, useState } from "react";
-import { Card, CardContent } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
 import { RefreshCw } from "lucide-react";
 import { Network } from "vis-network";
 import { DataSet } from "vis-data";
@@ -50,10 +48,14 @@ interface VisEdge extends Omit<ApiEdge, "properties"> {
 
 export default function Tree() {
     const project = useContext(projectContext);
-
     const [layout, setLayout] = useState<LayoutType>("hierarchical");
+    const [isLoading, setIsLoading] = useState(false);
     const networkRef = useRef<Network | null>(null);
     const containerRef = useRef<HTMLDivElement>(null);
+    const dataRef = useRef<{
+        nodes: DataSet<VisNode>;
+        edges: DataSet<VisEdge>;
+    } | null>(null);
 
     const getNodeColor = (type: string) => {
         const colors: Record<string, { background: string; border: string }> = {
@@ -108,6 +110,12 @@ export default function Tree() {
     };
 
     const transformData = (apiData: ApiData) => {
+        // Clear existing data if any
+        if (dataRef.current) {
+            dataRef.current.nodes.clear();
+            dataRef.current.edges.clear();
+        }
+
         const nodes = new DataSet<VisNode>(
             apiData.nodes.map((node) => ({
                 ...node,
@@ -140,6 +148,7 @@ export default function Tree() {
             }))
         );
 
+        dataRef.current = { nodes, edges };
         return { nodes, edges };
     };
 
@@ -204,82 +213,86 @@ export default function Tree() {
             },
         };
 
+        // Destroy existing network if it exists
         if (networkRef.current) {
             networkRef.current.destroy();
+            networkRef.current = null;
         }
 
-        networkRef.current = new Network(
-            containerRef.current,
-            data,
-            options as any
-        );
+        try {
+            networkRef.current = new Network(
+                containerRef.current,
+                data,
+                options as any
+            );
 
-        networkRef.current.on("selectNode", (params: { nodes: number[] }) => {
-            const selectedNode = data.nodes.get(params.nodes[0]);
-            console.log("Selected node:", selectedNode);
-        });
+            networkRef.current.on(
+                "selectNode",
+                (params: { nodes: number[] }) => {
+                    const selectedNode = data.nodes.get(params.nodes[0]);
+                    console.log("Selected node:", selectedNode);
+                }
+            );
 
-        networkRef.current.on(
-            "stabilizationProgress",
-            (params: { iterations: number; total: number }) => {
-                const progress = Math.round(
-                    (params.iterations / params.total) * 100
-                );
-                console.log("Layout stabilization:", progress + "%");
-            }
-        );
+            networkRef.current.on(
+                "stabilizationProgress",
+                (params: { iterations: number; total: number }) => {
+                    const progress = Math.round(
+                        (params.iterations / params.total) * 100
+                    );
+                    console.log("Layout stabilization:", progress + "%");
+                }
+            );
 
-        networkRef.current.on("stabilizationIterationsDone", () => {
-            console.log("Layout stabilization finished");
-            networkRef.current?.fit();
-        });
+            networkRef.current.on("stabilizationIterationsDone", () => {
+                console.log("Layout stabilization finished");
+                networkRef.current?.fit();
+            });
+        } catch (error) {
+            console.error("Error creating network:", error);
+        }
     };
 
     const refreshGraph = async () => {
-        // Sample data - replace with actual API call
-        // const sampleData: ApiData = {
-        //     nodes: [
-        //         {
-        //             id: 0,
-        //             status: null,
-        //             priority: null,
-        //             assignee: null,
-        //             created_at: "2024-11-07T20:25:33.951991",
-        //             label: "jhgdfdhjhkjlghfg",
-        //             properties: {
-        //                 name: "jhgdfdhjhkjlghfg",
-        //                 team_size: 3,
-        //                 created_at: "2024-11-07T20:25:33.951991",
-        //                 type: "workspace",
-        //                 document_count: 1,
-        //             },
-        //             type: "workspace",
-        //         },
-        //     ],
-        //     edges: [
-        //         {
-        //             id: 71,
-        //             to: 69,
-        //             from: 0,
-        //             properties: {
-        //                 created_at: "2024-11-07T20:25:35.452522",
-        //             },
-        //             type: "HAS_MEMBER",
-        //         },
-        //     ],
-        // };
+        try {
+            setIsLoading(true);
+            const data = await getGraph({
+                aiServiceId: project.aiServiceId,
+            });
 
-        const data = await getGraph({
-            aiServiceId: project.aiServiceId,
-        });
+            // Destroy existing network before creating new one
+            if (networkRef.current) {
+                networkRef.current.destroy();
+                networkRef.current = null;
+            }
 
-        const transformedData = transformData(data);
-        createNetwork(transformedData);
+            const transformedData = transformData(data);
+            createNetwork(transformedData);
+        } catch (error) {
+            console.error("Error refreshing graph:", error);
+        } finally {
+            setIsLoading(false);
+        }
     };
+
+    // Cleanup on unmount
+    useEffect(() => {
+        return () => {
+            if (networkRef.current) {
+                networkRef.current.destroy();
+                networkRef.current = null;
+            }
+            if (dataRef.current) {
+                dataRef.current.nodes.clear();
+                dataRef.current.edges.clear();
+                dataRef.current = null;
+            }
+        };
+    }, []);
 
     useEffect(() => {
         refreshGraph();
-    }, [layout]);
+    }, [layout, project.aiServiceId]);
 
     return (
         <div className="w-full border-2 bg-myslate-900 rounded-2xl">
@@ -290,23 +303,6 @@ export default function Tree() {
                     </h2>
 
                     <div className="flex space-x-4 items-center">
-                        {/* <Button
-                            variant="outline"
-                            size="sm"
-                            className="flex items-center gap-2"
-                            onClick={refreshGraph}
-                        >
-                            
-                        </Button> */}
-                        <button
-                            type="button"
-                            className="flex gap-2 items-center px-4 py-2 font-semibold text-sm bg-white text-myslate-950 rounded-lg"
-                        >
-                            <RefreshCw className="h-4 w-4" strokeWidth={3} />
-
-                            <p>Refresh</p>
-                        </button>
-
                         <div className="flex gap-2">
                             <button
                                 type="button"
@@ -319,6 +315,7 @@ export default function Tree() {
                                     e.preventDefault();
                                     setLayout("hierarchical");
                                 }}
+                                disabled={isLoading}
                             >
                                 Force Directed Layout
                             </button>
@@ -333,6 +330,7 @@ export default function Tree() {
                                     e.preventDefault();
                                     setLayout("force");
                                 }}
+                                disabled={isLoading}
                             >
                                 Hierarchical Layout
                             </button>
@@ -342,7 +340,9 @@ export default function Tree() {
 
                 <div
                     ref={containerRef}
-                    className="w-full h-[600px] border border-gray-200 rounded-xl bg-myslate-800"
+                    className={`w-full h-[600px] border border-gray-200 rounded-xl bg-myslate-800 ${
+                        isLoading ? "opacity-50" : ""
+                    }`}
                 />
             </div>
         </div>

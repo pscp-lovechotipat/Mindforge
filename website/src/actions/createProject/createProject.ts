@@ -7,6 +7,7 @@ import getUser from "../auth/getUser";
 import prisma from "@/lib/prisma";
 import aiStatusToDbStatus from "@/utils/aiStatusToDbStatus";
 import aiPriorityToDbPriority from "@/utils/aiPriorityToDbPriority";
+import { revalidatePath } from "next/cache";
 
 export default async function createProject({
     name,
@@ -148,6 +149,8 @@ export default async function createProject({
     const todos = await prisma.todo.createMany({
         data: tasksFormatted,
     });
+
+    revalidatePath("/");
 
     return {
         success: true,
