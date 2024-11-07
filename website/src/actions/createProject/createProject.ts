@@ -51,7 +51,11 @@ export default async function createProject({
         },
     });
 
-    if (!users.length || users.some((u) => !u.skils.length)) {
+    if (
+        !users.length ||
+        users.some((u) => !u.skils.length) ||
+        users.length < userIds.length + 1
+    ) {
         return {
             success: false,
             message:
