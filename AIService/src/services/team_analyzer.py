@@ -1,7 +1,7 @@
 '''
  Team Analysis Service Module is module handles team member analysis and role matching operations.
 
- Author: Tanapon
+ Author: Thanapon Sukpiboon
 '''
 
 from typing import Dict, List, Any
