@@ -14,13 +14,38 @@ import type {
 import getGraph from "@/actions/project/getGraph";
 import projectContext from "@/contexts/project";
 
+// Define the shape of node colors
 interface NodeColors {
     background: string;
     border: string;
 }
 
-interface VisNode extends Omit<ApiNode, 'id'> {
+// Define the shape of node properties
+interface NodeProperties {
+    name?: string;
+    team_size?: number;
+    created_at?: string;
+    type?: string;
+    document_count?: number;
+    [key: string]: any;
+}
+
+// Define the shape of edge properties
+interface EdgeProperties {
+    created_at: string;
+    [key: string]: any;
+}
+
+// Define the shape of visualization node
+interface VisNode {
     id: string;
+    label?: string;
+    status: string | null;
+    priority: string | null;
+    assignee: string | null;
+    created_at: string;
+    properties: NodeProperties;
+    type: string;
     color?: NodeColors;
     font?: {
         color: string;
@@ -31,14 +56,13 @@ interface VisNode extends Omit<ApiNode, 'id'> {
     title?: string;
 }
 
-interface VisEdge extends Omit<ApiEdge, 'id' | 'to' | 'from' | 'properties'> {
+// Define the shape of visualization edge
+interface VisEdge {
     id: string;
     to: string;
     from: string;
-    properties?: {
-        created_at: string;
-        [key: string]: any;
-    };
+    type: EdgeType;
+    properties?: EdgeProperties;
     arrows?: {
         to?: {
             enabled?: boolean;
@@ -55,6 +79,65 @@ interface VisEdge extends Omit<ApiEdge, 'id' | 'to' | 'from' | 'properties'> {
     label?: string;
 }
 
+// Define network options type
+interface NetworkOptions {
+    nodes: {
+        borderWidth: number;
+        shadow: boolean;
+        font: {
+            color: string;
+            size: number;
+            face: string;
+        };
+    };
+    edges: {
+        width: number;
+        shadow: boolean;
+        smooth: {
+            type: string;
+            forceDirection: string;
+            roundness: number;
+        };
+    };
+    physics: {
+        enabled: boolean;
+        barnesHut: {
+            gravitationalConstant: number;
+            centralGravity: number;
+            springLength: number;
+            springConstant: number;
+            damping: number;
+        };
+        stabilization: {
+            enabled: boolean;
+            iterations: number;
+            updateInterval: number;
+        };
+    };
+    layout: {
+        hierarchical: {
+            enabled: boolean;
+            direction: string;
+            sortMethod: string;
+            nodeSpacing: number;
+            levelSeparation: number;
+            treeSpacing: number;
+        };
+    };
+    interaction: {
+        dragNodes: boolean;
+        dragView: boolean;
+        zoomView: boolean;
+        hover: boolean;
+        tooltipDelay: number;
+        keyboard: {
+            enabled: boolean;
+            speed: { x: number; y: number; zoom: number };
+            bindToWindow: boolean;
+        };
+    };
+}
+
 export default function Tree() {
     const project = useContext(projectContext);
     const [layout, setLayout] = useState<LayoutType>("hierarchical");
@@ -63,6 +146,10 @@ export default function Tree() {
     const networkRef = useRef<Network | null>(null);
     const containerRef = useRef<HTMLDivElement>(null);
     const dataRef = useRef<{ nodes: DataSet<VisNode>; edges: DataSet<VisEdge> } | null>(null);
+
+    const generateUniqueId = (id: number | string): string => {
+        return `${id}_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    };
 
     const getNodeColor = (type: string): NodeColors => {
         const colors: Record<string, NodeColors> = {
@@ -98,28 +185,20 @@ export default function Tree() {
 
     const generateNodeTooltip = (node: ApiNode): string => {
         const properties = node.properties || {};
-        const formattedProperties = Object.entries(properties)
-            .filter(([key]) => key !== "name")
-            .map(([key, value]) => {
-                const formattedKey = key.replace(/_/g, " ");
-                return `<span>${formattedKey}: ${value}</span><br/>`;
-            })
-            .join("");
-
-        const statusLine = node.status ? `Status: ${node.status}<br/>` : "";
-        const priorityLine = node.priority ? `Priority: ${node.priority}<br/>` : "";
-        const assigneeLine = node.assignee ? `Assignee: ${node.assignee}<br/>` : "";
-
         return `
             <div style="padding: 10px; background-color: #ffffff; border-radius: 4px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
                 <strong style="color: #111827; font-size: 14px;">
                     ${properties.name || node.label || "Unnamed"}
                 </strong>
                 <div style="margin-top: 4px; color: #4B5563; font-size: 12px;">
-                    ${formattedProperties}
-                    ${statusLine}
-                    ${priorityLine}
-                    ${assigneeLine}
+                    ${Object.entries(properties)
+                        .filter(([key]) => key !== "name")
+                        .map(([key, value]) => `
+                            <span>${key.replace(/_/g, " ")}: ${value}</span><br/>
+                        `).join("")}
+                    ${node.status ? `Status: ${node.status}<br/>` : ""}
+                    ${node.priority ? `Priority: ${node.priority}<br/>` : ""}
+                    ${node.assignee ? `Assignee: ${node.assignee}<br/>` : ""}
                 </div>
             </div>
         `;
@@ -132,45 +211,68 @@ export default function Tree() {
                 dataRef.current.nodes.clear();
                 dataRef.current.edges.clear();
             }
-
-            // Transform nodes
+    
+            // Create a Map to store node mappings
+            const nodeIdMap = new Map<number | string, string>();
+    
+            // Transform nodes with unique IDs
             const nodes = new DataSet<VisNode>(
-                apiData.nodes.map((node) => ({
-                    ...node,
-                    id: String(node.id),
-                    color: getNodeColor(node.type),
-                    font: {
-                        color: "#ffffff",
-                        size: 14,
-                    },
-                    shape: getNodeShape(node.type),
-                    size: 30,
-                    title: generateNodeTooltip(node),
-                }))
-            );
-
-            // Transform edges
-            const edges = new DataSet<VisEdge>(
-                apiData.edges.map((edge) => ({
-                    ...edge,
-                    id: String(edge.id),
-                    from: String(edge.from),
-                    to: String(edge.to),
-                    arrows: {
-                        to: {
-                            enabled: true,
-                            scaleFactor: 0.5,
+                apiData.nodes.map((node) => {
+                    const uniqueId = generateUniqueId(node.id);
+                    nodeIdMap.set(node.id, uniqueId);
+                    
+                    return {
+                        ...node,
+                        id: uniqueId,
+                        color: getNodeColor(node.type),
+                        font: {
+                            color: "#ffffff",
+                            size: 14,
                         },
-                    },
-                    color: getEdgeColor(edge.type),
-                    label: edge.type.toLowerCase().replace(/_/g, " "),
-                    font: {
-                        size: 10,
-                        align: "middle",
-                    },
-                }))
+                        shape: getNodeShape(node.type),
+                        size: 30,
+                        title: generateNodeTooltip(node),
+                    };
+                })
             );
-
+    
+            // Transform edges with mapped IDs
+            // First, create valid edges array
+            const validEdges: VisEdge[] = apiData.edges
+                .map((edge) => {
+                    const fromId = nodeIdMap.get(edge.from);
+                    const toId = nodeIdMap.get(edge.to);
+                    
+                    if (!fromId || !toId) {
+                        console.warn('Missing node reference:', { edge, fromId, toId });
+                        return null;
+                    }
+    
+                    return {
+                        id: generateUniqueId(edge.id),
+                        from: fromId,
+                        to: toId,
+                        type: edge.type,
+                        properties: edge.properties,
+                        arrows: {
+                            to: {
+                                enabled: true,
+                                scaleFactor: 0.5,
+                            },
+                        },
+                        color: getEdgeColor(edge.type),
+                        label: edge.type.toLowerCase().replace(/_/g, " "),
+                        font: {
+                            size: 10,
+                            align: "middle",
+                        },
+                    } as VisEdge;
+                })
+                .filter((edge): edge is VisEdge => edge !== null);
+    
+            // Create edges DataSet with valid edges only
+            const edges = new DataSet<VisEdge>(validEdges);
+    
             dataRef.current = { nodes, edges };
             return { nodes, edges };
         } catch (error) {
@@ -189,7 +291,7 @@ export default function Tree() {
                 networkRef.current = null;
             }
 
-            const options = {
+            const options: NetworkOptions = {
                 nodes: {
                     borderWidth: 2,
                     shadow: true,
@@ -247,11 +349,12 @@ export default function Tree() {
                 },
             };
 
+            // Create new network with fresh DataSets
             networkRef.current = new Network(
                 containerRef.current,
-                { 
-                    nodes: data.nodes,
-                    edges: data.edges 
+                {
+                    nodes: new DataSet(data.nodes.get()),
+                    edges: new DataSet(data.edges.get())
                 },
                 options as any
             );
@@ -262,10 +365,13 @@ export default function Tree() {
                 console.log("Selected node:", selectedNode);
             });
 
-            networkRef.current.on("stabilizationProgress", (params: { iterations: number; total: number }) => {
-                const progress = Math.round((params.iterations / params.total) * 100);
-                console.log("Layout stabilization:", progress + "%");
-            });
+            networkRef.current.on(
+                "stabilizationProgress",
+                (params: { iterations: number; total: number }) => {
+                    const progress = Math.round((params.iterations / params.total) * 100);
+                    console.log("Layout stabilization:", progress + "%");
+                }
+            );
 
             networkRef.current.on("stabilizationIterationsDone", () => {
                 console.log("Layout stabilization finished");
@@ -324,7 +430,6 @@ export default function Tree() {
         };
     }, []);
 
-    // Initialize and handle layout changes
     useEffect(() => {
         refreshGraph();
     }, [layout, project.aiServiceId]);
