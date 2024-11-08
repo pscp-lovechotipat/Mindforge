@@ -24,7 +24,7 @@ export default async function HomePage() {
                     <div className="flex justify-center">
                         <iframe
                             className="h-[160px] aspect-[16/9] border-2 rounded-2xl"
-                            src="https://www.youtube.com/embed/0NQPMTJ9rh0?si=bbdEJlitLiNmrE9R"
+                            src="https://www.youtube.com/embed/hPlcrPL3rzo"
                             title="YouTube video player"
                             allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
                             referrerPolicy="strict-origin-when-cross-origin"
